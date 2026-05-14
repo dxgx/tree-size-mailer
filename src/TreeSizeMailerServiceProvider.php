@@ -2,7 +2,7 @@
 
 namespace DeadSimpleApps\TreeSizeMailer;
 
-use DeadSimpleApps\TreeSizeMailer\Commands\DiskReportCommand;
+use DeadSimpleApps\TreeSizeMailer\Commands\TreeSizeReportCommand;
 use Illuminate\Support\ServiceProvider;
 
 class TreeSizeMailerServiceProvider extends ServiceProvider
@@ -26,7 +26,7 @@ class TreeSizeMailerServiceProvider extends ServiceProvider
         // Register commands
         if ($this->app->runningInConsole()) {
             $this->commands([
-                DiskReportCommand::class,
+                TreeSizeReportCommand::class,
             ]);
 
             // Publish config

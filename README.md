@@ -23,7 +23,7 @@ A Laravel package that generates comprehensive directory tree size reports and e
 Install the package via Composer:
 
 ```bash
-composer require deadsimpleapps/tree-size-mailer
+composer require dxgx/tree-size-mailer
 ```
 
 ### Publish Configuration
@@ -56,28 +56,73 @@ After publishing, edit `config/tree-size-mailer.php`:
 return [
     // Email recipients (array of email addresses)
     'recipients' => [
-        env('DISK_REPORT_EMAIL', 'admin@example.com'),
+        env('TREE_SIZE_REPORT_EMAIL', 'admin@example.com'),
     ],
 
     // Base directory to scan (defaults to Laravel base path)
-    'scan_path' => env('DISK_REPORT_SCAN_PATH', base_path()),
+    'scan_path' => env('TREE_SIZE_REPORT_SCAN_PATH', base_path()),
 
     // Maximum directory depth for overview and tree view
-    'max_depth' => (int) env('DISK_REPORT_MAX_DEPTH', 5),
+    'max_depth' => (int) env('TREE_SIZE_REPORT_MAX_DEPTH', 5),
 
     // Minimum size (bytes) for detailed report entries
-    'min_file_size' => (int) env('DISK_REPORT_MIN_SIZE', 102400), // 100 KB
+    'min_file_size' => (int) env('TREE_SIZE_REPORT_MIN_SIZE', 102400), // 100 KB
 
     // Minimum size (bytes) for overview section
-    'min_overview_size' => (int) env('DISK_REPORT_MIN_OVERVIEW_SIZE', 1048576), // 1 MB
+    'min_overview_size' => (int) env('TREE_SIZE_REPORT_MIN_OVERVIEW_SIZE', 1048576), // 1 MB
 
     // Minimum size (bytes) for tree view
-    'min_tree_size' => (int) env('DISK_REPORT_MIN_TREE_SIZE', 1048576), // 1 MB
+    'min_tree_size' => (int) env('TREE_SIZE_REPORT_MIN_TREE_SIZE', 1048576), // 1 MB
+
+    // Excluded directory patterns (supports wildcards)
+    'excluded_dirs' => [
+        // '/node_modules',
+        // '/vendor*',
+        // '*/cache',
+        // '*test*',
+    ],
 
     // Application name for email subject
     'app_name' => env('APP_NAME', 'Laravel App'),
 ];
 ```
+
+### Excluding Directories
+
+You can exclude specific directories from all report sections using wildcard patterns. Only directory paths are checked (not individual files).
+
+**Pattern Syntax:**
+
+- `/vendor*` - Excludes all directories starting with `/vendor`  
+  _(Matches: `/vendor`, `/vendor_folder`, `/vendor/links/photos/logs`)_
+
+- `*vendor` - Excludes all directories ending with `vendor`  
+  _(Matches: `/vendor`, `/super_duper_vendor`, but not `/my_vendor_is`)_
+
+- `*vendor*` - Excludes all directories containing `vendor` anywhere  
+  _(Matches: `/vendor`, `/vendor_path`, `/my/vendor/path`, `/my/path/vendor`)_
+
+**Configuration Example:**
+
+```php
+'excluded_dirs' => [
+    '/node_modules',        // Exclude node_modules directory
+    '/vendor*',             // Exclude vendor and any vendor_* directories
+    '*/cache',              // Exclude any cache directory at any level
+    '*/storage/logs',       // Exclude storage/logs directories
+    '*test*',               // Exclude any directory with 'test' in the name
+    '*/dist',               // Exclude build output directories
+    '*/build',
+],
+```
+
+**Performance Note:** Exclusion patterns are checked in order. List more specific patterns first for optimal performance.
+
+**Effect on Reports:**
+- **Detailed Report**: Excluded directories won't appear
+- **Overview Section**: Files in excluded directories are not counted
+- **Vendor Breakdown**: Vendor packages matching exclusion patterns won't appear
+- **Tree View**: Excluded directory branches are completely omitted
 
 ### Environment Variables
 
@@ -85,14 +130,14 @@ Add these to your `.env` file:
 
 ```bash
 # Required: Email recipient(s)
-DISK_REPORT_EMAIL=admin@example.com
+TREE_SIZE_REPORT_EMAIL=admin@example.com
 
 # Optional: Advanced configuration
-DISK_REPORT_SCAN_PATH=/path/to/scan
-DISK_REPORT_MAX_DEPTH=5
-DISK_REPORT_MIN_SIZE=102400         # 100 KB
-DISK_REPORT_MIN_OVERVIEW_SIZE=1048576  # 1 MB
-DISK_REPORT_MIN_TREE_SIZE=1048576      # 1 MB
+TREE_SIZE_REPORT_SCAN_PATH=/path/to/scan
+TREE_SIZE_REPORT_MAX_DEPTH=5
+TREE_SIZE_REPORT_MIN_SIZE=102400         # 100 KB
+TREE_SIZE_REPORT_MIN_OVERVIEW_SIZE=1048576  # 1 MB
+TREE_SIZE_REPORT_MIN_TREE_SIZE=1048576      # 1 MB
 ```
 
 ### Multiple Recipients
@@ -178,10 +223,10 @@ The email report includes four main sections:
 High-level summary of directories up to the configured depth (default: 5 levels). Shows only directories larger than `min_overview_size` (default: 1 MB).
 
 ### 2. Detailed Directory Sizes
-Complete list of all directories with their sizes, sorted by size descending. Excludes directories smaller than `min_file_size` (default: 100 KB) and vendor directories (shown separately).
+Complete list of all directories with their sizes, sorted by size descending. Excludes directories smaller than `min_file_size` (default: 100 KB) and any directories matching configured exclusion patterns.
 
 ### 3. Vendor Package Breakdown
-Analysis of Composer vendor packages, showing the size of each package up to 3 directory levels deep. Useful for identifying large dependencies.
+Analysis of Composer vendor packages, showing the size of each package up to 3 directory levels deep. Useful for identifying large dependencies. Note: If you exclude `/vendor*` in the configuration, this section will be empty.
 
 ### 4. Directory Tree
 Hierarchical tree view with visual indentation showing the directory structure. Only includes directories larger than `min_tree_size` (default: 1 MB).
@@ -223,7 +268,7 @@ To scan a different directory (e.g., multi-tenant setup):
 Or use environment variable:
 
 ```bash
-DISK_REPORT_SCAN_PATH=/var/www/client-sites/client-123
+TREE_SIZE_REPORT_SCAN_PATH=/var/www/client-sites/client-123
 ```
 
 ## Size Thresholds

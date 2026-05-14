@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `tree-size-mailer` will be documented in this file.
+All notable changes to `dxgx/tree-size-mailer` will be documented in this file.
 
 ## [1.0.0] - 2026-05-14
 
@@ -38,12 +38,12 @@ All notable changes to `tree-size-mailer` will be documented in this file.
 - `app_name`: Application name for email subject
 
 ### Environment Variables
-- `DISK_REPORT_EMAIL`: Primary recipient email
-- `DISK_REPORT_SCAN_PATH`: Custom scan directory
-- `DISK_REPORT_MAX_DEPTH`: Maximum depth
-- `DISK_REPORT_MIN_SIZE`: Minimum file size
-- `DISK_REPORT_MIN_OVERVIEW_SIZE`: Minimum overview size
-- `DISK_REPORT_MIN_TREE_SIZE`: Minimum tree size
+- `TREE_SIZE_REPORT_EMAIL`: Primary recipient email
+- `TREE_SIZE_REPORT_SCAN_PATH`: Custom scan directory
+- `TREE_SIZE_REPORT_MAX_DEPTH`: Maximum depth
+- `TREE_SIZE_REPORT_MIN_SIZE`: Minimum file size
+- `TREE_SIZE_REPORT_MIN_OVERVIEW_SIZE`: Minimum overview size
+- `TREE_SIZE_REPORT_MIN_TREE_SIZE`: Minimum tree size
 
 ### Technical Details
 - PHP 8.2+ required

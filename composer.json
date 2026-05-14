@@ -1,5 +1,5 @@
 {
-    "name": "deadsimpleapps/tree-size-mailer",
+    "name": "dxgx/tree-size-mailer",
     "description": "Laravel package for generating and emailing directory tree size reports",
     "type": "library",
     "keywords": [

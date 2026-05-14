@@ -2,11 +2,11 @@
 
 namespace DeadSimpleApps\TreeSizeMailer\Commands;
 
-use DeadSimpleApps\TreeSizeMailer\Mail\DiskReportMail;
+use DeadSimpleApps\TreeSizeMailer\Mail\TreeSizeReportMail;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 
-class DiskReportCommand extends Command
+class TreeSizeReportCommand extends Command
 {
     protected $signature = 'tree-size:report';
 
@@ -35,10 +35,71 @@ class DiskReportCommand extends Command
         $recipients = config('tree-size-mailer.recipients', ['admin@example.com']);
 
         foreach ($recipients as $email) {
-            Mail::to($email)->send(new DiskReportMail($rows, $overview, $vendorBreakdown, $treeView, $basePath));
+            Mail::to($email)->send(new TreeSizeReportMail($rows, $overview, $vendorBreakdown, $treeView, $basePath));
         }
 
         $this->info('Tree size report emailed to: ' . implode(', ', $recipients));
+    }
+
+    /**
+     * Check if a directory path should be excluded based on configured patterns.
+     * Only checks directory paths, not filenames.
+     *
+     * @param string $path The directory path to check (should start with ./)
+     * @return bool True if the directory should be excluded
+     */
+    private function isExcluded(string $path): bool
+    {
+        $excludedDirs = config('tree-size-mailer.excluded_dirs', []);
+        
+        if (empty($excludedDirs)) {
+            return false;
+        }
+
+        // Normalize path - ensure it starts with /
+        $normalizedPath = '/' . ltrim($path, './');
+
+        foreach ($excludedDirs as $pattern) {
+            // Normalize pattern
+            $pattern = '/' . ltrim($pattern, './');
+            
+            if ($this->matchesPattern($normalizedPath, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Match a directory path against a wildcard pattern.
+     * Supports * wildcard for matching any characters.
+     *
+     * Examples:
+     *   "/vendor*" matches /vendor, /vendor_folder, /vendor/sub/path
+     *   "*vendor" matches /vendor, /my_vendor (but not /my_vendor_is)
+     *   "*vendor*" matches /vendor, /my/vendor/path, /vendor_path
+     *
+     * @param string $path The directory path to check
+     * @param string $pattern The pattern to match against
+     * @return bool True if path matches pattern
+     */
+    private function matchesPattern(string $path, string $pattern): bool
+    {
+        // If no wildcard, do exact match or prefix match for subdirectories
+        if (strpos($pattern, '*') === false) {
+            return $path === $pattern || str_starts_with($path, $pattern . '/');
+        }
+
+        // Convert pattern to regex
+        // Escape special regex characters except *
+        $regex = preg_quote($pattern, '/');
+        // Replace escaped \* with .*
+        $regex = str_replace('\*', '.*', $regex);
+        // Anchor the pattern
+        $regex = '/^' . $regex . '(\/.*)?$/';
+
+        return (bool) preg_match($regex, $path);
     }
 
     private function buildReport(string $basePath): array
@@ -77,8 +138,8 @@ class DiskReportCommand extends Command
                 ? './' . ltrim(substr($dir, strlen($basePath)), '/')
                 : $dir;
 
-            // Skip vendor directories
-            if (str_starts_with($relativePath, './vendor/') || $relativePath === './vendor') {
+            // Check if directory is excluded (replaces old vendor-only check)
+            if ($this->isExcluded($relativePath)) {
                 continue;
             }
 
@@ -111,11 +172,6 @@ class DiskReportCommand extends Command
                         ? ltrim(substr($path, strlen($basePath)), '/')
                         : $path;
 
-                    // Skip vendor directories for overview
-                    if (str_starts_with($relativePath, 'vendor/')) {
-                        continue;
-                    }
-
                     // Get directory path only (exclude filename), then limit to configured levels
                     $parts = explode('/', $relativePath);
                     // Remove the filename (last part) to get only the directory path
@@ -126,6 +182,11 @@ class DiskReportCommand extends Command
                         continue; // Skip root-level files
                     }
                     $topLevel = implode('/', array_slice($parts, 0, $levelCount));
+
+                    // Check if directory should be excluded
+                    if ($this->isExcluded('./' . $topLevel)) {
+                        continue;
+                    }
 
                     if (!isset($topLevelSizes[$topLevel])) {
                         $topLevelSizes[$topLevel] = 0;
@@ -189,6 +250,11 @@ class DiskReportCommand extends Command
                         continue;
                     }
                     $vendorPackage = implode('/', array_slice($parts, 0, $levelCount));
+
+                    // Check if this vendor package directory should be excluded
+                    if ($this->isExcluded('./' . $vendorPackage)) {
+                        continue;
+                    }
 
                     if (!isset($vendorSizes[$vendorPackage])) {
                         $vendorSizes[$vendorPackage] = 0;
@@ -264,6 +330,14 @@ class DiskReportCommand extends Command
 
                     $parts = explode('/', $relativePath);
                     array_pop($parts); // Remove filename to get directory
+
+                    // Check if any parent directory should be excluded
+                    for ($i = 1; $i <= count($parts); $i++) {
+                        $dirPath = './' . implode('/', array_slice($parts, 0, $i));
+                        if ($this->isExcluded($dirPath)) {
+                            continue 2; // Skip this file entirely
+                        }
+                    }
 
                     $fileSize = $object->getSize();
 

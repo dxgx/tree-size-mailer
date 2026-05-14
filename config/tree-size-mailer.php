@@ -8,13 +8,13 @@ return [
     |--------------------------------------------------------------------------
     |
     | Email addresses that will receive the tree size report. You can specify
-    | multiple recipients. The DISK_REPORT_EMAIL environment variable will
+    | multiple recipients. The TREE_SIZE_REPORT_EMAIL environment variable will
     | override the first recipient if set.
     |
     */
 
     'recipients' => [
-        env('DISK_REPORT_EMAIL', 'admin@example.com'),
+        env('TREE_SIZE_REPORT_EMAIL', 'admin@example.com'),
     ],
 
     /*
@@ -24,11 +24,11 @@ return [
     |
     | The base directory path to scan for size analysis. Defaults to the
     | Laravel application base path. You can override this to scan a
-    | different directory or use DISK_REPORT_SCAN_PATH env variable.
+    | different directory or use TREE_SIZE_REPORT_SCAN_PATH env variable.
     |
     */
 
-    'scan_path' => env('DISK_REPORT_SCAN_PATH', base_path()),
+    'scan_path' => env('TREE_SIZE_REPORT_SCAN_PATH', base_path()),
 
     /*
     |--------------------------------------------------------------------------
@@ -43,7 +43,7 @@ return [
     |
     */
 
-    'max_depth' => (int) env('DISK_REPORT_MAX_DEPTH', 5),
+    'max_depth' => (int) env('TREE_SIZE_REPORT_MAX_DEPTH', 5),
 
     /*
     |--------------------------------------------------------------------------
@@ -57,7 +57,7 @@ return [
     |
     */
 
-    'min_file_size' => (int) env('DISK_REPORT_MIN_SIZE', 102400),
+    'min_file_size' => (int) env('TREE_SIZE_REPORT_MIN_SIZE', 102400),
 
     /*
     |--------------------------------------------------------------------------
@@ -72,7 +72,7 @@ return [
     |
     */
 
-    'min_overview_size' => (int) env('DISK_REPORT_MIN_OVERVIEW_SIZE', 1048576),
+    'min_overview_size' => (int) env('TREE_SIZE_REPORT_MIN_OVERVIEW_SIZE', 1048576),
 
     /*
     |--------------------------------------------------------------------------
@@ -87,7 +87,40 @@ return [
     |
     */
 
-    'min_tree_size' => (int) env('DISK_REPORT_MIN_TREE_SIZE', 1048576),
+    'min_tree_size' => (int) env('TREE_SIZE_REPORT_MIN_TREE_SIZE', 1048576),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Excluded Directories
+    |--------------------------------------------------------------------------
+    |
+    | Array of directory path patterns to exclude from all reports. Patterns
+    | are matched against directory paths only (files are not checked).
+    | Supports wildcard matching with * character.
+    |
+    | Pattern matching rules:
+    |   "/vendor*"  - Excludes dirs starting with /vendor
+    |                 (matches: /vendor, /vendor_folder, /vendor/sub/path)
+    |   "*vendor"   - Excludes dirs ending with vendor
+    |                 (matches: /vendor, /my_vendor, but not /my_vendor_is)
+    |   "*vendor*"  - Excludes dirs containing vendor anywhere
+    |                 (matches: /vendor, /my/vendor/path, /vendor_path)
+    |
+    | For performance optimization, directories are sorted and checked in order.
+    | More specific patterns should be listed first.
+    |
+    | Example array syntax:
+    |   - ['/node_modules', '/vendor', 'cache', 'storage/logs']
+    |   - ['test', 'tmp', 'build', 'dist']
+    |
+    */
+
+    'excluded_dirs' => [
+        // '/node_modules',
+        // '/vendor*',
+        // '*/cache',
+        // '*test*',
+    ],
 
     /*
     |--------------------------------------------------------------------------
