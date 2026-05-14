@@ -16,26 +16,41 @@ class TreeSizeReportCommand extends Command
     {
         $basePath = config('tree-size-mailer.scan_path', base_path());
         $rows = $this->buildReport($basePath);
-        $overview = $this->buildOverview($basePath);
-        $vendorBreakdown = $this->buildVendorBreakdown($basePath);
         $treeView = $this->buildTreeView($basePath);
+        
+        // Build custom directory breakdowns
+        $customBreakdowns = $this->buildCustomBreakdowns($basePath);
 
         // Calculate totals for each section
-        $overviewTotal = array_sum(array_column($overview, 'size_bytes'));
         $detailedTotal = array_sum(array_column($rows, 'size_bytes'));
-        $vendorTotal = array_sum(array_column($vendorBreakdown, 'size_bytes'));
         $treeTotal = array_sum(array_column($treeView, 'size_bytes'));
 
         $this->info('Tree size report generated:');
-        $this->info('  Overview: ' . count($overview) . ' dirs, ' . $this->formatSize($overviewTotal));
         $this->info('  Detailed: ' . count($rows) . ' dirs, ' . $this->formatSize($detailedTotal));
-        $this->info('  Vendor: ' . count($vendorBreakdown) . ' packages, ' . $this->formatSize($vendorTotal));
+        
+        foreach ($customBreakdowns as $breakdown) {
+            $total = array_sum(array_column($breakdown['items'], 'size_bytes'));
+            $this->info('  ' . $breakdown['title'] . ': ' . count($breakdown['items']) . ' items, ' . $this->formatSize($total));
+        }
+        
         $this->info('  Tree: ' . count($treeView) . ' items, ' . $this->formatSize($treeTotal));
 
         $recipients = config('tree-size-mailer.recipients', ['admin@example.com']);
+        
+        // Gather config for display in email
+        $config = [
+            'max_depth' => config('tree-size-mailer.max_depth', 5),
+            'min_file_size' => config('tree-size-mailer.min_file_size', 102400),
+            'min_overview_size' => config('tree-size-mailer.min_overview_size', 1048576),
+            'min_tree_size' => config('tree-size-mailer.min_tree_size', 1048576),
+            'detailed_max_rows' => config('tree-size-mailer.detailed_max_rows', 100),
+            'breakdown_dirs' => config('tree-size-mailer.breakdown_dirs', []),
+            'detailed_total' => $detailedTotal,
+            'detailed_total_human' => $this->formatSize($detailedTotal),
+        ];
 
         foreach ($recipients as $email) {
-            Mail::to($email)->send(new TreeSizeReportMail($rows, $overview, $vendorBreakdown, $treeView, $basePath));
+            Mail::to($email)->send(new TreeSizeReportMail($rows, $treeView, $customBreakdowns, $basePath, $config));
         }
 
         $this->info('Tree size report emailed to: ' . implode(', ', $recipients));
@@ -126,6 +141,30 @@ class TreeSizeReportCommand extends Command
 
         $rows = [];
         $minSize = config('tree-size-mailer.min_file_size', 102400);
+        $maxRows = config('tree-size-mailer.detailed_max_rows', 100);
+        $breakdownDirs = config('tree-size-mailer.breakdown_dirs', []);
+
+        // First, add breakdown directories as collapsed entries
+        foreach ($breakdownDirs as $breakdownPath => $depth) {
+            $normalizedPath = ltrim($breakdownPath, './');
+            $fullPath = $basePath . '/' . $normalizedPath;
+            
+            if (is_dir($fullPath)) {
+                $totalSize = $this->calculateRecursiveSize($fullPath);
+                
+                if ($totalSize >= $minSize) {
+                    $relativePath = './' . $normalizedPath;
+                    $breakdownId = 'breakdown-' . str_replace(['/', ' ', '.'], '-', trim($breakdownPath, './'));
+                    $rows[] = [
+                        'path' => $relativePath,
+                        'size_bytes' => $totalSize,
+                        'size_human' => $this->formatSize($totalSize),
+                        'is_breakdown' => true,
+                        'breakdown_id' => $breakdownId,
+                    ];
+                }
+            }
+        }
 
         foreach ($dirSizes as $dir => $size) {
             // Skip items smaller than configured minimum
@@ -142,149 +181,31 @@ class TreeSizeReportCommand extends Command
             if ($this->isExcluded($relativePath)) {
                 continue;
             }
+            
+            // Check if directory is in breakdown_dirs configuration or is a subdirectory of one
+            if ($this->isInBreakdownDirs($relativePath, $breakdownDirs)) {
+                continue;
+            }
 
             $rows[] = [
                 'path' => $relativePath,
                 'size_bytes' => $size,
                 'size_human' => $this->formatSize($size),
+                'is_breakdown' => false,
             ];
+        }
+
+        // Sort all rows by size
+        usort($rows, function($a, $b) {
+            return $b['size_bytes'] <=> $a['size_bytes'];
+        });
+
+        // Apply row limit after sorting (but keep all for total calculation)
+        if ($maxRows > 0 && count($rows) > $maxRows) {
+            $rows = array_slice($rows, 0, $maxRows);
         }
 
         return $rows;
-    }
-
-    private function buildOverview(string $basePath): array
-    {
-        $topLevelSizes = [];
-        $maxDepth = config('tree-size-mailer.max_depth', 4);
-
-        try {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($basePath, \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::SELF_FIRST,
-                \RecursiveIteratorIterator::CATCH_GET_CHILD
-            );
-
-            foreach ($iterator as $object) {
-                if ($object->isFile()) {
-                    $path = $object->getPathname();
-                    $relativePath = str_starts_with($path, $basePath)
-                        ? ltrim(substr($path, strlen($basePath)), '/')
-                        : $path;
-
-                    // Get directory path only (exclude filename), then limit to configured levels
-                    $parts = explode('/', $relativePath);
-                    // Remove the filename (last part) to get only the directory path
-                    array_pop($parts);
-                    // Take up to configured directory levels
-                    $levelCount = min(count($parts), $maxDepth);
-                    if ($levelCount === 0) {
-                        continue; // Skip root-level files
-                    }
-                    $topLevel = implode('/', array_slice($parts, 0, $levelCount));
-
-                    // Check if directory should be excluded
-                    if ($this->isExcluded('./' . $topLevel)) {
-                        continue;
-                    }
-
-                    if (!isset($topLevelSizes[$topLevel])) {
-                        $topLevelSizes[$topLevel] = 0;
-                    }
-                    $topLevelSizes[$topLevel] += $object->getSize();
-                }
-            }
-        } catch (\Exception $e) {
-            $this->warn('Error scanning for overview: ' . $e->getMessage());
-        }
-
-        arsort($topLevelSizes);
-
-        $overview = [];
-        $minSize = config('tree-size-mailer.min_overview_size', 1048576);
-
-        foreach ($topLevelSizes as $dir => $size) {
-            // Skip items smaller than configured minimum
-            if ($size < $minSize) {
-                continue;
-            }
-
-            $overview[] = [
-                'path' => './' . $dir,
-                'size_bytes' => $size,
-                'size_human' => $this->formatSize($size),
-            ];
-        }
-
-        return $overview;
-    }
-
-    private function buildVendorBreakdown(string $basePath): array
-    {
-        $vendorSizes = [];
-
-        try {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($basePath, \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::SELF_FIRST,
-                \RecursiveIteratorIterator::CATCH_GET_CHILD
-            );
-
-            foreach ($iterator as $object) {
-                if ($object->isFile()) {
-                    $path = $object->getPathname();
-                    $relativePath = str_starts_with($path, $basePath)
-                        ? ltrim(substr($path, strlen($basePath)), '/')
-                        : $path;
-
-                    // Only process vendor directories
-                    if (!str_starts_with($relativePath, 'vendor/')) {
-                        continue;
-                    }
-
-                    // Get vendor path (3 levels: vendor/package/subfolder), exclude filename
-                    $parts = explode('/', $relativePath);
-                    array_pop($parts); // Remove filename
-                    $levelCount = min(count($parts), 3);
-                    if ($levelCount === 0) {
-                        continue;
-                    }
-                    $vendorPackage = implode('/', array_slice($parts, 0, $levelCount));
-
-                    // Check if this vendor package directory should be excluded
-                    if ($this->isExcluded('./' . $vendorPackage)) {
-                        continue;
-                    }
-
-                    if (!isset($vendorSizes[$vendorPackage])) {
-                        $vendorSizes[$vendorPackage] = 0;
-                    }
-                    $vendorSizes[$vendorPackage] += $object->getSize();
-                }
-            }
-        } catch (\Exception $e) {
-            $this->warn('Error scanning vendor: ' . $e->getMessage());
-        }
-
-        arsort($vendorSizes);
-
-        $breakdown = [];
-        $minSize = config('tree-size-mailer.min_file_size', 102400);
-
-        foreach ($vendorSizes as $dir => $size) {
-            // Skip items smaller than configured minimum
-            if ($size < $minSize) {
-                continue;
-            }
-
-            $breakdown[] = [
-                'path' => './' . $dir,
-                'size_bytes' => $size,
-                'size_human' => $this->formatSize($size),
-            ];
-        }
-
-        return $breakdown;
     }
 
     private function dirSize(string $path): int
@@ -294,6 +215,34 @@ class TreeSizeReportCommand extends Command
             foreach (new \DirectoryIterator($path) as $file) {
                 if ($file->isFile()) {
                     $size += $file->getSize();
+                }
+            }
+        } catch (\Exception $e) {
+            // skip unreadable
+        }
+
+        return $size;
+    }
+
+    /**
+     * Calculate the total recursive size of a directory including all subdirectories.
+     *
+     * @param string $path The directory path
+     * @return int Total size in bytes
+     */
+    private function calculateRecursiveSize(string $path): int
+    {
+        $size = 0;
+        try {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST,
+                \RecursiveIteratorIterator::CATCH_GET_CHILD
+            );
+
+            foreach ($iterator as $object) {
+                if ($object->isFile()) {
+                    $size += $object->getSize();
                 }
             }
         } catch (\Exception $e) {
@@ -368,7 +317,7 @@ class TreeSizeReportCommand extends Command
             $structure = $this->buildTreeStructure($dirSizes, $filesSizes, $filesCounts, $minSize, $maxDepth);
 
             // Format as flat list with indentation
-            $tree = $this->formatTreeLines($structure, '', true, []);
+            $tree = $this->formatTreeLines($structure, 0);
         } catch (\Exception $e) {
             $this->warn('Error building tree view: ' . $e->getMessage());
         }
@@ -450,15 +399,20 @@ class TreeSizeReportCommand extends Command
         return $children;
     }
 
-    private function formatTreeLines(array $nodes, string $prefix, bool $isRoot, array $parentPrefixes): array
+    private function formatTreeLines(array $nodes, int $depth, string $prefix = ''): array
     {
         $lines = [];
         $count = count($nodes);
 
         foreach ($nodes as $index => $node) {
             $isLast = ($index === $count - 1);
-            $connector = $isRoot ? '' : ($isLast ? '└── ' : '├── ');
-            $currentPrefix = $prefix . $connector;
+            
+            // Build current line prefix
+            if ($depth === 0) {
+                $currentPrefix = '';
+            } else {
+                $currentPrefix = $prefix . ($isLast ? '└── ' : '├── ');
+            }
 
             $lines[] = [
                 'indent' => $currentPrefix,
@@ -467,15 +421,179 @@ class TreeSizeReportCommand extends Command
                 'size_bytes' => $node['size'],
             ];
 
-            // Process children with updated prefix (add 8 spaces per level, no vertical lines)
+            // Process children with increased depth
             if (!empty($node['children'])) {
-                $childPrefix = $prefix . ($isRoot ? '' : '        ');
-                $childLines = $this->formatTreeLines($node['children'], $childPrefix, false, []);
+                // Build prefix for children
+                if ($depth === 0) {
+                    $childPrefix = '';
+                } else {
+                    $childPrefix = $prefix . ($isLast ? '    ' : '│   ');
+                }
+                $childLines = $this->formatTreeLines($node['children'], $depth + 1, $childPrefix);
                 $lines = array_merge($lines, $childLines);
             }
         }
 
         return $lines;
+    }
+
+    /**
+     * Check if a directory path is configured for custom breakdown.
+     *
+     * @param string $path The directory path to check
+     * @param array $breakdownDirs The breakdown configuration array
+     * @return bool True if the directory or any of its parents is in breakdown config
+     */
+    private function isInBreakdownDirs(string $path, array $breakdownDirs): bool
+    {
+        if (empty($breakdownDirs)) {
+            return false;
+        }
+
+        $normalizedPath = '/' . ltrim($path, './');
+
+        foreach ($breakdownDirs as $breakdownPath => $depth) {
+            $normalizedBreakdownPath = '/' . ltrim($breakdownPath, './');
+            
+            // Check if path matches or is a subdirectory of a breakdown path
+            if ($normalizedPath === $normalizedBreakdownPath || str_starts_with($normalizedPath, $normalizedBreakdownPath . '/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Build custom directory breakdowns based on configuration.
+     *
+     * @param string $basePath The base path to scan
+     * @return array Array of breakdown sections with their items
+     */
+    private function buildCustomBreakdowns(string $basePath): array
+    {
+        $breakdownDirs = config('tree-size-mailer.breakdown_dirs', []);
+        $breakdowns = [];
+
+        if (empty($breakdownDirs)) {
+            return $breakdowns;
+        }
+
+        foreach ($breakdownDirs as $breakdownPath => $depth) {
+            $normalizedPath = '/' . ltrim($breakdownPath, './');
+            $title = trim($normalizedPath, '/') ?: 'Root';
+            $title = ucfirst(str_replace(['/', '_', '-'], ' ', $title));
+            
+            $breakdown = $this->buildDirectoryBreakdown($basePath, $breakdownPath, $depth);
+            
+            if (!empty($breakdown)) {
+                $totalSize = array_sum(array_column($breakdown, 'size_bytes'));
+                $breakdownId = 'breakdown-' . str_replace(['/', ' ', '.'], '-', trim($breakdownPath, './'));
+                $originalCount = count($breakdown);
+                $maxRows = config('tree-size-mailer.detailed_max_rows', 100);
+                $isLimited = false;
+                
+                // Apply row limit to breakdown items
+                if ($maxRows > 0 && count($breakdown) > $maxRows) {
+                    $breakdown = array_slice($breakdown, 0, $maxRows);
+                    $isLimited = true;
+                }
+                
+                $breakdowns[] = [
+                    'path' => $breakdownPath,
+                    'title' => $title . ' Breakdown (' . $depth . ' Level' . ($depth > 1 ? 's' : '') . ')',
+                    'depth' => $depth,
+                    'items' => $breakdown,
+                    'total_bytes' => $totalSize,
+                    'total_human' => $this->formatSize($totalSize),
+                    'breakdown_id' => $breakdownId,
+                    'is_limited' => $isLimited,
+                    'original_count' => $originalCount,
+                    'displayed_count' => count($breakdown),
+                ];
+            }
+        }
+
+        return $breakdowns;
+    }
+
+    /**
+     * Build a breakdown for a specific directory with custom depth.
+     *
+     * @param string $basePath The base path to scan
+     * @param string $breakdownPath The directory to break down (e.g., '/vendor')
+     * @param int $depth The depth level for breakdown
+     * @return array The breakdown items
+     */
+    private function buildDirectoryBreakdown(string $basePath, string $breakdownPath, int $depth): array
+    {
+        $directorySizes = [];
+        $normalizedBreakdownPath = ltrim($breakdownPath, './');
+
+        try {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($basePath, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST,
+                \RecursiveIteratorIterator::CATCH_GET_CHILD
+            );
+
+            foreach ($iterator as $object) {
+                if ($object->isFile()) {
+                    $path = $object->getPathname();
+                    $relativePath = str_starts_with($path, $basePath)
+                        ? ltrim(substr($path, strlen($basePath)), '/')
+                        : $path;
+
+                    // Only process files within the breakdown directory
+                    if (!str_starts_with($relativePath, $normalizedBreakdownPath . '/') && $relativePath !== $normalizedBreakdownPath) {
+                        continue;
+                    }
+
+                    // Remove the breakdown path prefix and get directory path (exclude filename)
+                    $subPath = substr($relativePath, strlen($normalizedBreakdownPath));
+                    $subPath = ltrim($subPath, '/');
+                    
+                    $parts = explode('/', $subPath);
+                    array_pop($parts); // Remove filename
+                    
+                    // Limit to configured depth
+                    $levelCount = min(count($parts), $depth);
+                    if ($levelCount === 0) {
+                        continue; // Skip root-level files in breakdown dir
+                    }
+                    
+                    $breakdownSubPath = implode('/', array_slice($parts, 0, $levelCount));
+                    $fullPath = $normalizedBreakdownPath . '/' . $breakdownSubPath;
+
+                    if (!isset($directorySizes[$fullPath])) {
+                        $directorySizes[$fullPath] = 0;
+                    }
+                    $directorySizes[$fullPath] += $object->getSize();
+                }
+            }
+        } catch (\Exception $e) {
+            $this->warn('Error scanning breakdown directory: ' . $e->getMessage());
+        }
+
+        arsort($directorySizes);
+
+        $breakdown = [];
+        $minSize = config('tree-size-mailer.min_file_size', 102400);
+
+        foreach ($directorySizes as $dir => $size) {
+            // Skip items smaller than configured minimum
+            if ($size < $minSize) {
+                continue;
+            }
+
+            $breakdown[] = [
+                'path' => './' . $dir,
+                'size_bytes' => $size,
+                'size_human' => $this->formatSize($size),
+            ];
+        }
+
+        return $breakdown;
     }
 
     private function formatSize(int $bytes): string

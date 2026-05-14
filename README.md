@@ -4,10 +4,11 @@ A Laravel package that generates comprehensive directory tree size reports and e
 
 ## Features
 
+- 🌳 **Tree View** - Hierarchical directory structure with clean indentation (shown first)
 - 📊 **Overview Section** - High-level directory size summary
-- 📂 **Detailed Report** - All directories with configurable minimum size threshold
-- 📦 **Vendor Breakdown** - Composer package sizes analysis
-- 🌳 **Tree View** - Hierarchical directory structure with indentation
+- 📂 **Detailed Report** - All directories with configurable row limits
+- 📦 **Custom Breakdowns** - Break down specific directories with custom depth levels
+- 🔍 **Section Filters** - Each section shows applied filters (size limits, exclusions)
 - ⚙️ **Fully Configurable** - Control scan depth, size thresholds, and recipients
 - 📧 **Email Reports** - Automatic email delivery with HTML formatting
 - 🔧 **Environment Support** - Configure via `.env` variables
@@ -82,6 +83,15 @@ return [
         // '*test*',
     ],
 
+    // Custom directory breakdowns with specific depth levels
+    'breakdown_dirs' => [
+        // '/vendor' => 3,
+        // '/storage/app/public/photos' => 2,
+    ],
+
+    // Maximum rows in detailed report section (0 = unlimited)
+    'detailed_max_rows' => (int) env('TREE_SIZE_REPORT_DETAILED_MAX_ROWS', 100),
+
     // Application name for email subject
     'app_name' => env('APP_NAME', 'Laravel App'),
 ];
@@ -112,8 +122,41 @@ You can exclude specific directories from all report sections using wildcard pat
     '*/storage/logs',       // Exclude storage/logs directories
     '*test*',               // Exclude any directory with 'test' in the name
     '*/dist',               // Exclude build output directories
-    '*/build',
+    Custom Breakdowns**: Excluded patterns still apply within breakdowns
+- **Tree View**: Excluded directory branches are completely omitted
+
+### Custom Directory Breakdowns
+
+Create dedicated sections for specific directories with custom depth levels. Directories in `breakdown_dirs` will:
+- Have their own section in the email report
+- Be excluded from the "Detailed Directory Sizes" section (to avoid duplication)
+- Still appear in the tree view
+- Have their sizes calculated and included in totals
+
+**Configuration Example:**
+
+```php
+'breakdown_dirs' => [
+    '/vendor' => 3,                          // Composer packages (3 levels)
+    '/storage/app/public/photos' => 2,       // Photo storage (2 levels)
+    '/node_modules' => 2,                    // NPM packages (2 levels)
+    '/public_html' => 2,                     // Public assets (2 levels)
 ],
+```
+
+Each breakdown will create a section like "Vendor Breakdown (3 Levels)" showing directories up to the specified depth.
+
+### Detailed Report Row Limit
+
+TREE_SIZE_REPORT_DETAILED_MAX_ROWS=100      # Limit detailed section
+Control the maximum number of rows shown in the "Detailed Directory Sizes" section:
+
+```php
+'detailed_max_rows' => 100,  // Limit to 100 rows (default)
+'detailed_max_rows' => 0,    // Show all rows (unlimited)
+```
+
+This helps keep email reports manageable when scanning large directory structures.
 ```
 
 **Performance Note:** Exclusion patterns are checked in order. List more specific patterns first for optimal performance.
@@ -216,21 +259,35 @@ Schedule::command('tree-size:report')->weekly()->sundays()->at('00:00');
 ```
 
 ## Report Sections
+the following sections (in order):
 
-The email report includes four main sections:
+### 1. Directory Tree
+Hierarchical tree view with clean 4-space indentation showing the directory structure. Only includes directories larger than `min_tree_size` (default: 1 MB). Shows applied depth and size filters at the bottom.
 
-### 1. Overview
-High-level summary of directories up to the configured depth (default: 5 levels). Shows only directories larger than `min_overview_size` (default: 1 MB).
+**Display format:** Uses fixed-width font with simple indentation (no tree characters).
 
-### 2. Detailed Directory Sizes
-Complete list of all directories with their sizes, sorted by size descending. Excludes directories smaller than `min_file_size` (default: 100 KB) and any directories matching configured exclusion patterns.
+### 2. Overview
+High-level summary of directories up to the configured depth (default: 5 levels). Shows only directories larger than `min_overview_size` (default: 1 MB). Excludes directories configured in `breakdown_dirs`.
 
-### 3. Vendor Package Breakdown
-Analysis of Composer vendor packages, showing the size of each package up to 3 directory levels deep. Useful for identifying large dependencies. Note: If you exclude `/vendor*` in the configuration, this section will be empty.
+**Filter note:** Shows max depth, min size, and excluded breakdown directories.
 
-### 4. Directory Tree
-Hierarchical tree view with visual indentation showing the directory structure. Only includes directories larger than `min_tree_size` (default: 1 MB).
+### 3. Detailed Directory Sizes
+Complete list of all directories with their sizes, sorted by size descending. Limited to `detailed_max_rows` (default: 100). Excludes:
+- Directories smaller than `min_file_size` (default: 100 KB)
+- Directories matching configured exclusion patterns
+- Directories in `breakdown_dirs` (shown in their own sections)
 
+**Filter note:** Shows row limit, min size, and excluded directories.
+
+### 4. Custom Direc
+  Detailed: 100 dirs, 3.12 GB
+  Vendor Breakdown (3 Levels): 103 items, 123.99 MB
+  Public Html Breakdown (2 Levels): 6 items, 5.77 MB
+  Tree: 89 items, 2.67 GB
+Tree size report emailed to: admin@example.com
+```
+
+Note: Overview section no longer shows total size to avoid confusion with breakdown totals.
 ## Console Output
 
 When you run the command, you'll see summary statistics:

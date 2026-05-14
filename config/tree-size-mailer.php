@@ -124,6 +124,47 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Directory Breakdown Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure specific directories to be broken down into separate report
+    | sections with custom depth levels. These directories will:
+    |   - Have their own dedicated section in the report
+    |   - Be excluded from the "Detailed Directory Sizes" section
+    |   - Still appear in the tree view
+    |   - Have their sizes calculated and included in totals
+    |
+    | Format: ['path' => depth_level]
+    |
+    | Examples:
+    |   '/vendor' => 3            - Break down vendor to 3 levels deep
+    |   '/storage/app/public/photos' => 2  - Break down photos to 2 levels
+    |   '/node_modules' => 2      - Break down node_modules to 2 levels
+    |
+    */
+
+    'breakdown_dirs' => [
+//         '/vendor' => 3,
+//         '/storage/app/public/photos' => 2,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Detailed Report Row Limit
+    |--------------------------------------------------------------------------
+    |
+    | Maximum number of rows to display in the "Detailed Directory Sizes"
+    | section. This helps keep the email report manageable when there are
+    | many directories. Set to 0 for unlimited.
+    |
+    | Default: 100
+    |
+    */
+
+    'detailed_max_rows' => (int) env('TREE_SIZE_REPORT_DETAILED_MAX_ROWS', 100),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Name
     |--------------------------------------------------------------------------
     |

@@ -14,23 +14,23 @@ class TreeSizeReportMail extends Mailable
 
     public array $rows;
 
-    public array $overview;
-
-    public array $vendorBreakdown;
-
     public array $treeView;
+
+    public array $customBreakdowns;
 
     public string $basePath;
 
+    public array $config;
+
     public string $generatedAt;
 
-    public function __construct(array $rows, array $overview, array $vendorBreakdown, array $treeView, string $basePath)
+    public function __construct(array $rows, array $treeView, array $customBreakdowns, string $basePath, array $config)
     {
         $this->rows = $rows;
-        $this->overview = $overview;
-        $this->vendorBreakdown = $vendorBreakdown;
         $this->treeView = $treeView;
+        $this->customBreakdowns = $customBreakdowns;
         $this->basePath = $basePath;
+        $this->config = $config;
         $this->generatedAt = now()->format('Y-m-d H:i:s');
     }
 
