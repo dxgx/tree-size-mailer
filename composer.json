@@ -1,0 +1,39 @@
+{
+    "name": "deadsimpleapps/tree-size-mailer",
+    "description": "Laravel package for generating and emailing directory tree size reports",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "disk-usage",
+        "directory-size",
+        "email-report",
+        "tree-size"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "DeadSimpleApps",
+            "email": "dargud@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/console": "^11.0|^12.0",
+        "illuminate/mail": "^11.0|^12.0",
+        "illuminate/support": "^11.0|^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "DeadSimpleApps\\TreeSizeMailer\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "DeadSimpleApps\\TreeSizeMailer\\TreeSizeMailerServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
