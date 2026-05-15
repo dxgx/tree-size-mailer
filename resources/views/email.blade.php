@@ -9,8 +9,8 @@
         table { border-collapse: collapse; width: 100%; margin-bottom: 5px; }
         th { background: #f0f0f0; text-align: left; padding: 6px 10px; border-bottom: 2px solid #ccc; }
         td { padding: 4px 10px; border-bottom: 1px solid #eee; }
-        td.size { text-align: right; white-space: nowrap; font-weight: bold; width: 90px; }
-        td.tree-path { }
+        td.size { text-align: right; white-space: nowrap; font-weight: bold; width: 90px; font-family: monospace; }
+        td.tree-path { font-family: monospace; }
         .tree-table td { padding: 0.5px 10px; line-height: 1.3; }
         .muted { color: #888; font-size: 11px; }
         .section-note { color: #888; font-size: 10px; margin-top: 2px; margin-bottom: 20px; font-style: italic; }

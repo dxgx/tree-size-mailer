@@ -414,10 +414,28 @@ class TreeSizeReportCommand extends Command
                 $currentPrefix = $prefix . ($isLast ? '└── ' : '├── ');
             }
 
+            // Determine if we should hide the size for this node
+            // Hide size if: parent has only 1 child directory OR parent has only files (no subdirectories)
+            $shouldHideSize = false;
+            if (!empty($node['children'])) {
+                // Count directory children (exclude "(x files)" entries)
+                $dirChildrenCount = 0;
+                foreach ($node['children'] as $child) {
+                    if (!str_starts_with($child['name'], '(')) {
+                        $dirChildrenCount++;
+                    }
+                }
+                
+                // Hide size if there's exactly 1 directory child OR 0 directory children (only files)
+                if ($dirChildrenCount <= 1) {
+                    $shouldHideSize = true;
+                }
+            }
+
             $lines[] = [
                 'indent' => $currentPrefix,
                 'name' => $node['name'],
-                'size_human' => $node['size_human'],
+                'size_human' => $shouldHideSize ? '' : $node['size_human'],
                 'size_bytes' => $node['size'],
             ];
 
