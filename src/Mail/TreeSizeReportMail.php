@@ -12,6 +12,8 @@ class TreeSizeReportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public array $rootLevel;
+
     public array $rows;
 
     public array $treeView;
@@ -24,8 +26,9 @@ class TreeSizeReportMail extends Mailable
 
     public string $generatedAt;
 
-    public function __construct(array $rows, array $treeView, array $customBreakdowns, string $basePath, array $config)
+    public function __construct(array $rootLevel, array $rows, array $treeView, array $customBreakdowns, string $basePath, array $config)
     {
+        $this->rootLevel = $rootLevel;
         $this->rows = $rows;
         $this->treeView = $treeView;
         $this->customBreakdowns = $customBreakdowns;

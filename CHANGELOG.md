@@ -2,6 +2,16 @@
 
 All notable changes to `dxgx/tree-size-mailer` will be documented in this file.
 
+## [1.4.0] - 2026-05-19
+
+### Added
+- Root Level Overview section showing first-level directories only with their total recursive sizes
+- New section appears first in email report, providing quick summary of main directories
+
+### Changed
+- Email report now has Root Level Overview as the first section
+- Improved report structure with clearer hierarchy
+
 ## [1.0.0] - 2026-05-14
 
 ### Added

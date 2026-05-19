@@ -21,6 +21,25 @@
     <h2>📁 Directory Tree Size Report</h2>
     <p class="muted">Generated: {{ $generatedAt }}<br>Base path: {{ $basePath }}</p>
 
+    <h2>📊 Root Level Overview - Total: {{ $config['root_level_total_human'] }}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Size</th>
+                <th>Directory</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($rootLevel as $row)
+            <tr>
+                <td class="size">{{ $row['size_human'] }}</td>
+                <td>{{ $row['name'] }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+    <p class="section-note">First-level directories only • Sizes include all subdirectories</p>
+
     <h2>🌳 Directory Tree (Top Items, {{ $config['max_depth'] }} Depth)</h2>
     <table class="tree-table">
         <thead>

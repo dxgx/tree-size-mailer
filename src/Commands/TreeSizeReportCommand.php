@@ -15,6 +15,7 @@ class TreeSizeReportCommand extends Command
     public function handle(): void
     {
         $basePath = config('tree-size-mailer.scan_path', base_path());
+        $rootLevel = $this->buildRootLevelView($basePath);
         $rows = $this->buildReport($basePath);
         $treeView = $this->buildTreeView($basePath);
         
@@ -22,10 +23,12 @@ class TreeSizeReportCommand extends Command
         $customBreakdowns = $this->buildCustomBreakdowns($basePath);
 
         // Calculate totals for each section
+        $rootLevelTotal = array_sum(array_column($rootLevel, 'size_bytes'));
         $detailedTotal = array_sum(array_column($rows, 'size_bytes'));
         $treeTotal = array_sum(array_column($treeView, 'size_bytes'));
 
         $this->info('Tree size report generated:');
+        $this->info('  Root Level: ' . count($rootLevel) . ' dirs, ' . $this->formatSize($rootLevelTotal));
         $this->info('  Detailed: ' . count($rows) . ' dirs, ' . $this->formatSize($detailedTotal));
         
         foreach ($customBreakdowns as $breakdown) {
@@ -47,10 +50,12 @@ class TreeSizeReportCommand extends Command
             'breakdown_dirs' => config('tree-size-mailer.breakdown_dirs', []),
             'detailed_total' => $detailedTotal,
             'detailed_total_human' => $this->formatSize($detailedTotal),
+            'root_level_total' => $rootLevelTotal,
+            'root_level_total_human' => $this->formatSize($rootLevelTotal),
         ];
 
         foreach ($recipients as $email) {
-            Mail::to($email)->send(new TreeSizeReportMail($rows, $treeView, $customBreakdowns, $basePath, $config));
+            Mail::to($email)->send(new TreeSizeReportMail($rootLevel, $rows, $treeView, $customBreakdowns, $basePath, $config));
         }
 
         $this->info('Tree size report emailed to: ' . implode(', ', $recipients));
@@ -206,6 +211,55 @@ class TreeSizeReportCommand extends Command
         }
 
         return $rows;
+    }
+
+    /**
+     * Build a view of only the first level directories in the root.
+     *
+     * @param string $basePath The base path to scan
+     * @return array Array of first-level directories with their total recursive sizes
+     */
+    private function buildRootLevelView(string $basePath): array
+    {
+        $rootDirs = [];
+        
+        try {
+            // Scan only the immediate subdirectories of basePath
+            $iterator = new \DirectoryIterator($basePath);
+            
+            foreach ($iterator as $item) {
+                if ($item->isDot() || !$item->isDir()) {
+                    continue;
+                }
+                
+                $dirName = $item->getFilename();
+                $relativePath = './' . $dirName;
+                
+                // Check if directory is excluded
+                if ($this->isExcluded($relativePath)) {
+                    continue;
+                }
+                
+                // Calculate recursive size for this directory
+                $totalSize = $this->calculateRecursiveSize($item->getPathname());
+                
+                $rootDirs[] = [
+                    'name' => $dirName,
+                    'path' => $relativePath,
+                    'size_bytes' => $totalSize,
+                    'size_human' => $this->formatSize($totalSize),
+                ];
+            }
+        } catch (\Exception $e) {
+            $this->warn('Error building root level view: ' . $e->getMessage());
+        }
+        
+        // Sort by size (largest first)
+        usort($rootDirs, function($a, $b) {
+            return $b['size_bytes'] <=> $a['size_bytes'];
+        });
+        
+        return $rootDirs;
     }
 
     private function dirSize(string $path): int
