@@ -50,6 +50,7 @@ class TreeSizeReportMail extends Mailable
     {
         return new Content(
             view: 'tree-size-mailer::email',
+            text: 'tree-size-mailer::email-text',
         );
     }
 }

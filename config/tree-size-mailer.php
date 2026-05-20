@@ -191,4 +191,44 @@ return [
 
     'app_name' => env('APP_NAME', 'Laravel App'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Email Layout Sections
+    |--------------------------------------------------------------------------
+    |
+    | Configure which sections to include in the email report and their order.
+    | You can include 1-3 sections from the available options below.
+    |
+    | Available sections:
+    |   - 'root_level_overview'      : First-level directories with total sizes
+    |   - 'directory_tree'           : Hierarchical tree view with indentation
+    |   - 'detailed_directory_sizes' : Flat list sorted by size (all levels)
+    |   - 'custom_breakdowns'        : Custom sections for specific directories
+    |
+    | Default: All sections enabled in order
+    |
+    | // Minimal report (overview + tree only)
+    | 'layout' => [
+    |     'root_level_overview',
+    |     'directory_tree',
+    | ],
+    |
+    | // Detailed only
+    | 'layout' => [
+    |     'detailed_directory_sizes',
+    | ],
+    |
+    | // Custom order
+    | 'layout' => [
+    |     'directory_tree',
+    |     'custom_breakdowns',
+    | ],
+    */
+
+    'layout' => [
+        'root_level_overview',
+        'directory_tree',
+        'detailed_directory_sizes',
+        'custom_breakdowns',
+    ],
 ];

@@ -21,82 +21,86 @@
     <h2>📁 Directory Tree Size Report</h2>
     <p class="muted">Generated: {{ $generatedAt }}<br>Base path: {{ $basePath }}</p>
 
-    <h2>📊 Root Level Overview - Total: {{ $config['root_level_total_human'] }}</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Size</th>
-                <th>Directory</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($rootLevel as $row)
-            <tr>
-                <td class="size">{{ $row['size_human'] }}</td>
-                <td>{{ $row['name'] }}</td>
-            </tr>
+    @foreach($config['layout'] as $section)
+        @if($section === 'root_level_overview')
+            <h2>📊 Root Level Overview - Total: {{ $config['root_level_total_human'] }}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Size</th>
+                        <th>Directory</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($rootLevel as $row)
+                    <tr>
+                        <td class="size">{{ $row['size_human'] }}</td>
+                        <td>{{ $row['name'] }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            <p class="section-note">First-level directories only • Sizes include all subdirectories</p>
+        @elseif($section === 'directory_tree')
+            <h2>🌳 Directory Tree (Top Items, {{ $config['tree_view_depth'] }} Depth)</h2>
+            <table class="tree-table">
+                <thead>
+                    <tr>
+                        <th>Size</th>
+                        <th>Path</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($treeView as $row)
+                    <tr>
+                        <td class="size" style="border: none;">{{ $row['size_human'] }}</td>
+                        <td class="tree-path" style="white-space: pre; border: none;">{{ $row['indent'] }}{{ $row['name'] }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            <p class="section-note">Max depth: {{ $config['tree_view_depth'] }} levels • Min size: {{ number_format($config['min_tree_size'] / 1024 / 1024, 1) }} MB</p>
+        @elseif($section === 'detailed_directory_sizes')
+            <h2>📂 Detailed Directory Sizes (All Levels) - Total: {{ $config['detailed_total_human'] }}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Size</th>
+                        <th>Directory</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($rows as $row)
+                    <tr>
+                        <td class="size">{{ $row['size_human'] }}</td>
+                        <td>{{ $row['path'] }}@if($row['is_breakdown'] ?? false) <strong><a href="#{{ $row['breakdown_id'] }}" style="color: #666; text-decoration: none;">- see breakdown below</a></strong>@endif</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            <p class="section-note">Limited to {{ $config['detailed_max_rows'] }} rows • Min size: {{ number_format($config['min_file_size'] / 1024, 0) }} KB</p>
+        @elseif($section === 'custom_breakdowns')
+            @foreach($customBreakdowns as $breakdown)
+            <h2 id="{{ $breakdown['breakdown_id'] }}">📦 {{ $breakdown['title'] }} - Total: {{ $breakdown['total_human'] }}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Size</th>
+                        <th>Directory</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($breakdown['items'] as $row)
+                    <tr>
+                        <td class="size">{{ $row['size_human'] }}</td>
+                        <td>{{ $row['path'] }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            <p class="section-note">Depth: {{ $breakdown['depth'] }} levels • Min size: {{ number_format($config['min_file_size'] / 1024, 0) }} KB @if($breakdown['is_limited'])• <strong>Limited to {{ $breakdown['displayed_count'] }} of {{ $breakdown['original_count'] }} items</strong>@endif</p>
             @endforeach
-        </tbody>
-    </table>
-    <p class="section-note">First-level directories only • Sizes include all subdirectories</p>
-
-    <h2>🌳 Directory Tree (Top Items, {{ $config['tree_view_depth'] }} Depth)</h2>
-    <table class="tree-table">
-        <thead>
-            <tr>
-                <th>Size</th>
-                <th>Path</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($treeView as $row)
-            <tr>
-                <td class="size" style="border: none;">{{ $row['size_human'] }}</td>
-                <td class="tree-path" style="white-space: pre; border: none;">{{ $row['indent'] }}{{ $row['name'] }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-    <p class="section-note">Max depth: {{ $config['tree_view_depth'] }} levels • Min size: {{ number_format($config['min_tree_size'] / 1024 / 1024, 1) }} MB</p>
-
-    <h2>📂 Detailed Directory Sizes (All Levels) - Total: {{ $config['detailed_total_human'] }}</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Size</th>
-                <th>Directory</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($rows as $row)
-            <tr>
-                <td class="size">{{ $row['size_human'] }}</td>
-                <td>{{ $row['path'] }}@if($row['is_breakdown'] ?? false) <strong><a href="#{{ $row['breakdown_id'] }}" style="color: #666; text-decoration: none;">- see breakdown below</a></strong>@endif</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-    <p class="section-note">Limited to {{ $config['detailed_max_rows'] }} rows • Min size: {{ number_format($config['min_file_size'] / 1024, 0) }} KB</p>
-
-    @foreach($customBreakdowns as $breakdown)
-    <h2 id="{{ $breakdown['breakdown_id'] }}">📦 {{ $breakdown['title'] }} - Total: {{ $breakdown['total_human'] }}</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Size</th>
-                <th>Directory</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($breakdown['items'] as $row)
-            <tr>
-                <td class="size">{{ $row['size_human'] }}</td>
-                <td>{{ $row['path'] }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-    <p class="section-note">Depth: {{ $breakdown['depth'] }} levels • Min size: {{ number_format($config['min_file_size'] / 1024, 0) }} KB @if($breakdown['is_limited'])• <strong>Limited to {{ $breakdown['displayed_count'] }} of {{ $breakdown['original_count'] }} items</strong>@endif</p>
+        @endif
     @endforeach
 </body>
 </html>

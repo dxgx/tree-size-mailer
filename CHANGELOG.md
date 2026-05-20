@@ -2,6 +2,19 @@
 
 All notable changes to `dxgx/tree-size-mailer` will be documented in this file.
 
+## [1.6.0] - 2026-05-20
+
+### Added
+- `layout` configuration option to control which email sections are displayed and their order
+- Support for customizable report layouts (choose 1-3 sections from available options)
+- Plain text email version automatically generated alongside HTML version
+- Four configurable layout sections: `root_level_overview`, `directory_tree`, `detailed_directory_sizes`, `custom_breakdowns`
+
+### Changed
+- Email reports now conditionally display sections based on `layout` configuration
+- Both HTML (styled tables) and plain text (ASCII formatted) versions are generated for all emails
+- Section order can be customized by reordering the `layout` array
+
 ## [1.5.0] - 2026-05-20
 
 ### Added

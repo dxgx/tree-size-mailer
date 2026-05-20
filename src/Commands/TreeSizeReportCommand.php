@@ -53,6 +53,12 @@ class TreeSizeReportCommand extends Command
             'detailed_total_human' => $this->formatSize($detailedTotal),
             'root_level_total' => $rootLevelTotal,
             'root_level_total_human' => $this->formatSize($rootLevelTotal),
+            'layout' => config('tree-size-mailer.layout', [
+                'root_level_overview',
+                'directory_tree',
+                'detailed_directory_sizes',
+                'custom_breakdowns',
+            ]),
         ];
 
         foreach ($recipients as $email) {

@@ -94,8 +94,59 @@ return [
 
     // Application name for email subject
     'app_name' => env('APP_NAME', 'Laravel App'),
+
+    // Email layout sections (customize which sections to include)
+    'layout' => [
+        'root_level_overview',
+        'directory_tree',
+        'detailed_directory_sizes',
+        'custom_breakdowns',
+    ],
 ];
 ```
+
+### Report Layout Configuration
+
+Control which sections appear in your email reports and their order. The `layout` array accepts 1-3 sections from the available options:
+
+**Available Sections:**
+
+- `root_level_overview` - First-level directories with total sizes
+- `directory_tree` - Hierarchical tree structure with indentation
+- `detailed_directory_sizes` - Flat list sorted by size (all directory levels)
+- `custom_breakdowns` - Custom sections for directories defined in `breakdown_dirs`
+
+**Configuration Examples:**
+
+```php
+// Show only overview and tree (minimal report)
+'layout' => [
+    'root_level_overview',
+    'directory_tree',
+],
+
+// Show detailed report only
+'layout' => [
+    'detailed_directory_sizes',
+],
+
+// Custom order (tree view first, then detailed)
+'layout' => [
+    'directory_tree',
+    'detailed_directory_sizes',
+    'custom_breakdowns',
+],
+
+// All sections (default)
+'layout' => [
+    'root_level_overview',
+    'directory_tree',
+    'detailed_directory_sizes',
+    'custom_breakdowns',
+],
+```
+
+**Email Format:** The package automatically generates both HTML (styled tables) and plain text (ASCII formatted) versions of the email for maximum compatibility.
 
 ### Excluding Directories
 
