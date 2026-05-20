@@ -17,6 +17,13 @@ php artisan dg:tree-size-mailer
 
 # Package development (no test suite yet)
 composer install
+
+# Code formatting and validation (run after code changes)
+./vendor/bin/pint                          # Format and fix style issues
+./vendor/bin/pint --test                   # Check for style issues without fixing
+
+# PHP syntax check
+find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
 ```
 
 ## Architecture & Structure
@@ -82,9 +89,11 @@ When adding features, prioritize configuration options over hardcoded behavior.
 
 **Manual testing workflow**:
 1. Update code in `src/`
-2. Run `php artisan dg:tree-size-mailer`
-3. Check console output and received email
-4. Verify configuration changes work as expected
+2. Run code formatter: `./vendor/bin/pint`
+3. Run PHP syntax check: `find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;`
+4. Run `php artisan dg:tree-size-mailer`
+5. Check console output and received email
+6. Verify configuration changes work as expected
 
 **Future considerations**: When adding tests, use Pest (see user memory notes).
 

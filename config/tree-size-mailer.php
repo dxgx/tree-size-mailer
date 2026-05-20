@@ -160,8 +160,8 @@ return [
     */
 
     'breakdown_dirs' => [
-//         '/vendor' => 3,
-//         '/storage/app/public/photos' => 2,
+        //         '/vendor' => 3,
+        //         '/storage/app/public/photos' => 2,
     ],
 
     /*

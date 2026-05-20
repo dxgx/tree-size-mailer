@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "skills": {
+    "laravel": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "laravel/SKILL.md",
+      "computedHash": "d86bd752cb0495dc126cab91931bceee934f6c0cb9a7f4a9dd09cf549045fc58"
+    },
+    "laravel-blade": {
+      "source": "fusengine/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/laravel-expert/skills/laravel-blade/SKILL.md",
+      "computedHash": "29092eb97085c441af361ae8cda96a9ba95f9c2906c21d6fcb22f6ba41b90ea3"
+    },
+    "laravel-blade-component-patterns": {
+      "source": "iserter/laravel-claude-agents",
+      "sourceType": "github",
+      "skillPath": "skills/laravel-blade-component-patterns/SKILL.md",
+      "computedHash": "4fe35eb514db82613a195b4c3d790618adb88e70e68a84ff9c50d086fa288759"
+    },
+    "laravel-development": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "laravel-development/SKILL.md",
+      "computedHash": "a2c5901b20c07a500026fde489e13f33c1a0d06eb5201bbec2853eec86b55292"
+    },
+    "laravel-patterns": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "skillPath": "skills/laravel-patterns/SKILL.md",
+      "computedHash": "c56253bf241431910bd23fa1e04f72eae90af8ae744843b57c21f5f8fd9152c2"
+    },
+    "laravel-security": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "skillPath": "skills/laravel-security/SKILL.md",
+      "computedHash": "83f5d1d663a9e51bed330ec1d790eb45c943ba8255d70500e42e9eedd9a5fe55"
+    },
+    "laravel-specialist": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/laravel-specialist/SKILL.md",
+      "computedHash": "d58e2ed3488398cb94a039f25b9d270e55dc434e16102abff9035608bec3db90"
+    },
+    "laravel-tdd": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "skillPath": "skills/laravel-tdd/SKILL.md",
+      "computedHash": "1e1696def69bc34514f18890df71a3959f91b26a5112fa26928c0ffd02778b1d"
+    }
+  }
+}

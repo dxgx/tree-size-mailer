@@ -18,7 +18,7 @@ class TreeSizeReportCommand extends Command
         $rootLevel = $this->buildRootLevelView($basePath);
         $rows = $this->buildReport($basePath);
         $treeView = $this->buildTreeView($basePath);
-        
+
         // Build custom directory breakdowns
         $customBreakdowns = $this->buildCustomBreakdowns($basePath);
 
@@ -28,18 +28,18 @@ class TreeSizeReportCommand extends Command
         $treeTotal = array_sum(array_column($treeView, 'size_bytes'));
 
         $this->info('Tree size report generated:');
-        $this->info('  Root Level: ' . count($rootLevel) . ' dirs, ' . $this->formatSize($rootLevelTotal));
-        $this->info('  Detailed: ' . count($rows) . ' dirs, ' . $this->formatSize($detailedTotal));
-        
+        $this->info('  Root Level: '.count($rootLevel).' dirs, '.$this->formatSize($rootLevelTotal));
+        $this->info('  Detailed: '.count($rows).' dirs, '.$this->formatSize($detailedTotal));
+
         foreach ($customBreakdowns as $breakdown) {
             $total = array_sum(array_column($breakdown['items'], 'size_bytes'));
-            $this->info('  ' . $breakdown['title'] . ': ' . count($breakdown['items']) . ' items, ' . $this->formatSize($total));
+            $this->info('  '.$breakdown['title'].': '.count($breakdown['items']).' items, '.$this->formatSize($total));
         }
-        
-        $this->info('  Tree: ' . count($treeView) . ' items, ' . $this->formatSize($treeTotal));
+
+        $this->info('  Tree: '.count($treeView).' items, '.$this->formatSize($treeTotal));
 
         $recipients = config('tree-size-mailer.recipients', ['admin@example.com']);
-        
+
         // Gather config for display in email
         $config = [
             'max_depth' => config('tree-size-mailer.max_depth', 5),
@@ -65,31 +65,31 @@ class TreeSizeReportCommand extends Command
             Mail::to($email)->send(new TreeSizeReportMail($rootLevel, $rows, $treeView, $customBreakdowns, $basePath, $config));
         }
 
-        $this->info('Tree size report emailed to: ' . implode(', ', $recipients));
+        $this->info('Tree size report emailed to: '.implode(', ', $recipients));
     }
 
     /**
      * Check if a directory path should be excluded based on configured patterns.
      * Only checks directory paths, not filenames.
      *
-     * @param string $path The directory path to check (should start with ./)
+     * @param  string  $path  The directory path to check (should start with ./)
      * @return bool True if the directory should be excluded
      */
     private function isExcluded(string $path): bool
     {
         $excludedDirs = config('tree-size-mailer.excluded_dirs', []);
-        
+
         if (empty($excludedDirs)) {
             return false;
         }
 
         // Normalize path - ensure it starts with /
-        $normalizedPath = '/' . ltrim($path, './');
+        $normalizedPath = '/'.ltrim($path, './');
 
         foreach ($excludedDirs as $pattern) {
             // Normalize pattern
-            $pattern = '/' . ltrim($pattern, './');
-            
+            $pattern = '/'.ltrim($pattern, './');
+
             if ($this->matchesPattern($normalizedPath, $pattern)) {
                 return true;
             }
@@ -107,15 +107,15 @@ class TreeSizeReportCommand extends Command
      *   "*vendor" matches /vendor, /my_vendor (but not /my_vendor_is)
      *   "*vendor*" matches /vendor, /my/vendor/path, /vendor_path
      *
-     * @param string $path The directory path to check
-     * @param string $pattern The pattern to match against
+     * @param  string  $path  The directory path to check
+     * @param  string  $pattern  The pattern to match against
      * @return bool True if path matches pattern
      */
     private function matchesPattern(string $path, string $pattern): bool
     {
         // If no wildcard, do exact match or prefix match for subdirectories
         if (strpos($pattern, '*') === false) {
-            return $path === $pattern || str_starts_with($path, $pattern . '/');
+            return $path === $pattern || str_starts_with($path, $pattern.'/');
         }
 
         // Convert pattern to regex
@@ -124,7 +124,7 @@ class TreeSizeReportCommand extends Command
         // Replace escaped \* with .*
         $regex = str_replace('\*', '.*', $regex);
         // Anchor the pattern
-        $regex = '/^' . $regex . '(\/.*)?$/';
+        $regex = '/^'.$regex.'(\/.*)?$/';
 
         return (bool) preg_match($regex, $path);
     }
@@ -146,7 +146,7 @@ class TreeSizeReportCommand extends Command
                 }
             }
         } catch (\Exception $e) {
-            $this->warn('Error scanning: ' . $e->getMessage());
+            $this->warn('Error scanning: '.$e->getMessage());
         }
 
         arsort($dirSizes);
@@ -159,14 +159,14 @@ class TreeSizeReportCommand extends Command
         // First, add breakdown directories as collapsed entries
         foreach ($breakdownDirs as $breakdownPath => $depth) {
             $normalizedPath = ltrim($breakdownPath, './');
-            $fullPath = $basePath . '/' . $normalizedPath;
-            
+            $fullPath = $basePath.'/'.$normalizedPath;
+
             if (is_dir($fullPath)) {
                 $totalSize = $this->calculateRecursiveSize($fullPath);
-                
+
                 if ($totalSize >= $minSize) {
-                    $relativePath = './' . $normalizedPath;
-                    $breakdownId = 'breakdown-' . str_replace(['/', ' ', '.'], '-', trim($breakdownPath, './'));
+                    $relativePath = './'.$normalizedPath;
+                    $breakdownId = 'breakdown-'.str_replace(['/', ' ', '.'], '-', trim($breakdownPath, './'));
                     $rows[] = [
                         'path' => $relativePath,
                         'size_bytes' => $totalSize,
@@ -186,14 +186,14 @@ class TreeSizeReportCommand extends Command
 
             // Convert to relative path
             $relativePath = str_starts_with($dir, $basePath)
-                ? './' . ltrim(substr($dir, strlen($basePath)), '/')
+                ? './'.ltrim(substr($dir, strlen($basePath)), '/')
                 : $dir;
 
             // Check if directory is excluded (replaces old vendor-only check)
             if ($this->isExcluded($relativePath)) {
                 continue;
             }
-            
+
             // Check if directory is in breakdown_dirs configuration or is a subdirectory of one
             if ($this->isInBreakdownDirs($relativePath, $breakdownDirs)) {
                 continue;
@@ -208,7 +208,7 @@ class TreeSizeReportCommand extends Command
         }
 
         // Sort all rows by size
-        usort($rows, function($a, $b) {
+        usort($rows, function ($a, $b) {
             return $b['size_bytes'] <=> $a['size_bytes'];
         });
 
@@ -223,33 +223,33 @@ class TreeSizeReportCommand extends Command
     /**
      * Build a view of only the first level directories in the root.
      *
-     * @param string $basePath The base path to scan
+     * @param  string  $basePath  The base path to scan
      * @return array Array of first-level directories with their total recursive sizes
      */
     private function buildRootLevelView(string $basePath): array
     {
         $rootDirs = [];
-        
+
         try {
             // Scan only the immediate subdirectories of basePath
             $iterator = new \DirectoryIterator($basePath);
-            
+
             foreach ($iterator as $item) {
-                if ($item->isDot() || !$item->isDir()) {
+                if ($item->isDot() || ! $item->isDir()) {
                     continue;
                 }
-                
+
                 $dirName = $item->getFilename();
-                $relativePath = './' . $dirName;
-                
+                $relativePath = './'.$dirName;
+
                 // Check if directory is excluded
                 if ($this->isExcluded($relativePath)) {
                     continue;
                 }
-                
+
                 // Calculate recursive size for this directory
                 $totalSize = $this->calculateRecursiveSize($item->getPathname());
-                
+
                 $rootDirs[] = [
                     'name' => $dirName,
                     'path' => $relativePath,
@@ -258,14 +258,14 @@ class TreeSizeReportCommand extends Command
                 ];
             }
         } catch (\Exception $e) {
-            $this->warn('Error building root level view: ' . $e->getMessage());
+            $this->warn('Error building root level view: '.$e->getMessage());
         }
-        
+
         // Sort by size (largest first)
-        usort($rootDirs, function($a, $b) {
+        usort($rootDirs, function ($a, $b) {
             return $b['size_bytes'] <=> $a['size_bytes'];
         });
-        
+
         return $rootDirs;
     }
 
@@ -288,7 +288,7 @@ class TreeSizeReportCommand extends Command
     /**
      * Calculate the total recursive size of a directory including all subdirectories.
      *
-     * @param string $path The directory path
+     * @param  string  $path  The directory path
      * @return int Total size in bytes
      */
     private function calculateRecursiveSize(string $path): int
@@ -343,7 +343,7 @@ class TreeSizeReportCommand extends Command
 
                     // Check if any parent directory should be excluded
                     for ($i = 1; $i <= count($parts); $i++) {
-                        $dirPath = './' . implode('/', array_slice($parts, 0, $i));
+                        $dirPath = './'.implode('/', array_slice($parts, 0, $i));
                         if ($this->isExcluded($dirPath)) {
                             continue 2; // Skip this file entirely
                         }
@@ -354,7 +354,7 @@ class TreeSizeReportCommand extends Command
                     // Track directory sizes for ALL levels (including deeper than configured max)
                     for ($i = 1; $i <= count($parts); $i++) {
                         $dirPath = implode('/', array_slice($parts, 0, $i));
-                        if (!isset($dirSizes[$dirPath])) {
+                        if (! isset($dirSizes[$dirPath])) {
                             $dirSizes[$dirPath] = 0;
                         }
                         $dirSizes[$dirPath] += $fileSize;
@@ -364,7 +364,7 @@ class TreeSizeReportCommand extends Command
                     // Only track up to configured max depth since we won't display deeper
                     if (count($parts) <= $maxDepth) {
                         $dirPath = implode('/', $parts);
-                        if (!isset($filesSizes[$dirPath])) {
+                        if (! isset($filesSizes[$dirPath])) {
                             $filesSizes[$dirPath] = 0;
                             $filesCounts[$dirPath] = 0;
                         }
@@ -380,7 +380,7 @@ class TreeSizeReportCommand extends Command
             // Format as flat list with indentation
             $tree = $this->formatTreeLines($structure, 0);
         } catch (\Exception $e) {
-            $this->warn('Error building tree view: ' . $e->getMessage());
+            $this->warn('Error building tree view: '.$e->getMessage());
         }
 
         return $tree;
@@ -424,7 +424,7 @@ class TreeSizeReportCommand extends Command
         // Get direct children
         $childDirs = [];
         foreach ($dirSizes as $path => $size) {
-            if (str_starts_with($path, $parentPath . '/')) {
+            if (str_starts_with($path, $parentPath.'/')) {
                 $remainder = substr($path, strlen($parentPath) + 1);
                 if (strpos($remainder, '/') === false && $size >= $minSize) {
                     $childDirs[$remainder] = $size;
@@ -435,7 +435,7 @@ class TreeSizeReportCommand extends Command
         arsort($childDirs);
 
         foreach ($childDirs as $name => $size) {
-            $fullPath = $parentPath . '/' . $name;
+            $fullPath = $parentPath.'/'.$name;
             $node = [
                 'name' => $name,
                 'size' => $size,
@@ -448,9 +448,9 @@ class TreeSizeReportCommand extends Command
         // Add (files) entry if direct files >= configured minimum
         if (isset($filesSizes[$parentPath]) && $filesSizes[$parentPath] >= $minSize) {
             $fileCount = $filesCounts[$parentPath] ?? 0;
-            $filesLabel = $fileCount === 1 ? '1 file' : $fileCount . ' files';
+            $filesLabel = $fileCount === 1 ? '1 file' : $fileCount.' files';
             $children[] = [
-                'name' => '(' . $filesLabel . ')',
+                'name' => '('.$filesLabel.')',
                 'size' => $filesSizes[$parentPath],
                 'size_human' => $this->formatSize($filesSizes[$parentPath]),
                 'children' => [],
@@ -467,26 +467,26 @@ class TreeSizeReportCommand extends Command
 
         foreach ($nodes as $index => $node) {
             $isLast = ($index === $count - 1);
-            
+
             // Build current line prefix
             if ($depth === 0) {
                 $currentPrefix = '';
             } else {
-                $currentPrefix = $prefix . ($isLast ? '└── ' : '├── ');
+                $currentPrefix = $prefix.($isLast ? '└── ' : '├── ');
             }
 
             // Determine if we should hide the size for this node
             // Hide size if: parent has only 1 child directory OR parent has only files (no subdirectories)
             $shouldHideSize = false;
-            if (!empty($node['children'])) {
+            if (! empty($node['children'])) {
                 // Count directory children (exclude "(x files)" entries)
                 $dirChildrenCount = 0;
                 foreach ($node['children'] as $child) {
-                    if (!str_starts_with($child['name'], '(')) {
+                    if (! str_starts_with($child['name'], '(')) {
                         $dirChildrenCount++;
                     }
                 }
-                
+
                 // Hide size if there's exactly 1 directory child OR 0 directory children (only files)
                 if ($dirChildrenCount <= 1) {
                     $shouldHideSize = true;
@@ -501,12 +501,12 @@ class TreeSizeReportCommand extends Command
             ];
 
             // Process children with increased depth
-            if (!empty($node['children'])) {
+            if (! empty($node['children'])) {
                 // Build prefix for children
                 if ($depth === 0) {
                     $childPrefix = '';
                 } else {
-                    $childPrefix = $prefix . ($isLast ? '    ' : '│   ');
+                    $childPrefix = $prefix.($isLast ? '    ' : '│   ');
                 }
                 $childLines = $this->formatTreeLines($node['children'], $depth + 1, $childPrefix);
                 $lines = array_merge($lines, $childLines);
@@ -519,8 +519,8 @@ class TreeSizeReportCommand extends Command
     /**
      * Check if a directory path is configured for custom breakdown.
      *
-     * @param string $path The directory path to check
-     * @param array $breakdownDirs The breakdown configuration array
+     * @param  string  $path  The directory path to check
+     * @param  array  $breakdownDirs  The breakdown configuration array
      * @return bool True if the directory or any of its parents is in breakdown config
      */
     private function isInBreakdownDirs(string $path, array $breakdownDirs): bool
@@ -529,13 +529,13 @@ class TreeSizeReportCommand extends Command
             return false;
         }
 
-        $normalizedPath = '/' . ltrim($path, './');
+        $normalizedPath = '/'.ltrim($path, './');
 
         foreach ($breakdownDirs as $breakdownPath => $depth) {
-            $normalizedBreakdownPath = '/' . ltrim($breakdownPath, './');
-            
+            $normalizedBreakdownPath = '/'.ltrim($breakdownPath, './');
+
             // Check if path matches or is a subdirectory of a breakdown path
-            if ($normalizedPath === $normalizedBreakdownPath || str_starts_with($normalizedPath, $normalizedBreakdownPath . '/')) {
+            if ($normalizedPath === $normalizedBreakdownPath || str_starts_with($normalizedPath, $normalizedBreakdownPath.'/')) {
                 return true;
             }
         }
@@ -546,7 +546,7 @@ class TreeSizeReportCommand extends Command
     /**
      * Build custom directory breakdowns based on configuration.
      *
-     * @param string $basePath The base path to scan
+     * @param  string  $basePath  The base path to scan
      * @return array Array of breakdown sections with their items
      */
     private function buildCustomBreakdowns(string $basePath): array
@@ -559,28 +559,28 @@ class TreeSizeReportCommand extends Command
         }
 
         foreach ($breakdownDirs as $breakdownPath => $depth) {
-            $normalizedPath = '/' . ltrim($breakdownPath, './');
+            $normalizedPath = '/'.ltrim($breakdownPath, './');
             $title = trim($normalizedPath, '/') ?: 'Root';
             $title = ucfirst(str_replace(['/', '_', '-'], ' ', $title));
-            
+
             $breakdown = $this->buildDirectoryBreakdown($basePath, $breakdownPath, $depth);
-            
-            if (!empty($breakdown)) {
+
+            if (! empty($breakdown)) {
                 $totalSize = array_sum(array_column($breakdown, 'size_bytes'));
-                $breakdownId = 'breakdown-' . str_replace(['/', ' ', '.'], '-', trim($breakdownPath, './'));
+                $breakdownId = 'breakdown-'.str_replace(['/', ' ', '.'], '-', trim($breakdownPath, './'));
                 $originalCount = count($breakdown);
                 $maxRows = config('tree-size-mailer.detailed_max_rows', 100);
                 $isLimited = false;
-                
+
                 // Apply row limit to breakdown items
                 if ($maxRows > 0 && count($breakdown) > $maxRows) {
                     $breakdown = array_slice($breakdown, 0, $maxRows);
                     $isLimited = true;
                 }
-                
+
                 $breakdowns[] = [
                     'path' => $breakdownPath,
-                    'title' => $title . ' Breakdown (' . $depth . ' Level' . ($depth > 1 ? 's' : '') . ')',
+                    'title' => $title.' Breakdown ('.$depth.' Level'.($depth > 1 ? 's' : '').')',
                     'depth' => $depth,
                     'items' => $breakdown,
                     'total_bytes' => $totalSize,
@@ -599,9 +599,9 @@ class TreeSizeReportCommand extends Command
     /**
      * Build a breakdown for a specific directory with custom depth.
      *
-     * @param string $basePath The base path to scan
-     * @param string $breakdownPath The directory to break down (e.g., '/vendor')
-     * @param int $depth The depth level for breakdown
+     * @param  string  $basePath  The base path to scan
+     * @param  string  $breakdownPath  The directory to break down (e.g., '/vendor')
+     * @param  int  $depth  The depth level for breakdown
      * @return array The breakdown items
      */
     private function buildDirectoryBreakdown(string $basePath, string $breakdownPath, int $depth): array
@@ -624,34 +624,34 @@ class TreeSizeReportCommand extends Command
                         : $path;
 
                     // Only process files within the breakdown directory
-                    if (!str_starts_with($relativePath, $normalizedBreakdownPath . '/') && $relativePath !== $normalizedBreakdownPath) {
+                    if (! str_starts_with($relativePath, $normalizedBreakdownPath.'/') && $relativePath !== $normalizedBreakdownPath) {
                         continue;
                     }
 
                     // Remove the breakdown path prefix and get directory path (exclude filename)
                     $subPath = substr($relativePath, strlen($normalizedBreakdownPath));
                     $subPath = ltrim($subPath, '/');
-                    
+
                     $parts = explode('/', $subPath);
                     array_pop($parts); // Remove filename
-                    
+
                     // Limit to configured depth
                     $levelCount = min(count($parts), $depth);
                     if ($levelCount === 0) {
                         continue; // Skip root-level files in breakdown dir
                     }
-                    
-                    $breakdownSubPath = implode('/', array_slice($parts, 0, $levelCount));
-                    $fullPath = $normalizedBreakdownPath . '/' . $breakdownSubPath;
 
-                    if (!isset($directorySizes[$fullPath])) {
+                    $breakdownSubPath = implode('/', array_slice($parts, 0, $levelCount));
+                    $fullPath = $normalizedBreakdownPath.'/'.$breakdownSubPath;
+
+                    if (! isset($directorySizes[$fullPath])) {
                         $directorySizes[$fullPath] = 0;
                     }
                     $directorySizes[$fullPath] += $object->getSize();
                 }
             }
         } catch (\Exception $e) {
-            $this->warn('Error scanning breakdown directory: ' . $e->getMessage());
+            $this->warn('Error scanning breakdown directory: '.$e->getMessage());
         }
 
         arsort($directorySizes);
@@ -666,7 +666,7 @@ class TreeSizeReportCommand extends Command
             }
 
             $breakdown[] = [
-                'path' => './' . $dir,
+                'path' => './'.$dir,
                 'size_bytes' => $size,
                 'size_human' => $this->formatSize($size),
             ];
@@ -678,15 +678,15 @@ class TreeSizeReportCommand extends Command
     private function formatSize(int $bytes): string
     {
         if ($bytes >= 1024 * 1024 * 1024) {
-            return number_format($bytes / (1024 * 1024 * 1024), 2) . ' GB';
+            return number_format($bytes / (1024 * 1024 * 1024), 2).' GB';
         }
         if ($bytes >= 1024 * 1024) {
-            return number_format($bytes / (1024 * 1024), 2) . ' MB';
+            return number_format($bytes / (1024 * 1024), 2).' MB';
         }
         if ($bytes >= 1024) {
-            return number_format($bytes / 1024, 2) . ' KB';
+            return number_format($bytes / 1024, 2).' KB';
         }
 
-        return $bytes . ' B';
+        return $bytes.' B';
     }
 }

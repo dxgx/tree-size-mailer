@@ -42,7 +42,7 @@ class TreeSizeReportMail extends Mailable
         $appName = config('tree-size-mailer.app_name', config('app.name', 'Laravel'));
 
         return new Envelope(
-            subject: '[' . $appName . '] Directory Tree Size Report – ' . now()->format('Y-m-d'),
+            subject: '['.$appName.'] Directory Tree Size Report – '.now()->format('Y-m-d'),
         );
     }
 
