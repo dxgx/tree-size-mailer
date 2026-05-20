@@ -13,7 +13,7 @@ This is a **Laravel package** (not a full application) that scans directory stru
 
 ```bash
 # Manual testing via Artisan command
-php artisan tree-size:report
+php artisan dg:tree-size-mailer
 
 # Package development (no test suite yet)
 composer install
@@ -25,7 +25,7 @@ composer install
 src/
   ├── TreeSizeMailerServiceProvider.php  # Auto-discovered service provider
   ├── Commands/
-  │   └── TreeSizeReportCommand.php      # Artisan command (tree-size:report)
+  │   └── TreeSizeReportCommand.php      # Artisan command (dg:tree-size-mailer)
   └── Mail/
       └── TreeSizeReportMail.php         # Mailable for email reports
 config/
@@ -60,7 +60,7 @@ The package uses Laravel's auto-discovery via `composer.json` extra section:
 
 ### Naming & Organization
 
-- Command signature: `tree-size:report` (follows Laravel kebab-case convention)
+- Command signature: `dg:tree-size-mailer` (follows Laravel kebab-case convention)
 - Publishable tags: `tree-size-mailer-{config|views}` (descriptive with package prefix)
 - Config keys: snake_case (e.g., `min_file_size`, `breakdown_dirs`)
 
@@ -82,7 +82,7 @@ When adding features, prioritize configuration options over hardcoded behavior.
 
 **Manual testing workflow**:
 1. Update code in `src/`
-2. Run `php artisan tree-size:report`
+2. Run `php artisan dg:tree-size-mailer`
 3. Check console output and received email
 4. Verify configuration changes work as expected
 

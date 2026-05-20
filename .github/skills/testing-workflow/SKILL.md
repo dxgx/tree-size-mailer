@@ -1,6 +1,6 @@
 ---
 name: testing-workflow
-description: 'Test the TreeSizeMailer package by running tree-size:report command, validating output, and checking email generation. Use when testing changes, verifying functionality, or debugging report generation.'
+description: 'Test the TreeSizeMailer package by running dg:tree-size-mailer command, validating output, and checking email generation. Use when testing changes, verifying functionality, or debugging report generation.'
 argument-hint: 'Optional: specify custom config to test'
 ---
 
@@ -31,7 +31,7 @@ grep -A 2 "recipients\|scan_path\|max_depth\|min_.*_size" config/tree-size-maile
 Execute the Artisan command and capture output:
 
 ```bash
-php artisan tree-size:report
+php artisan dg:tree-size-mailer
 ```
 
 ### 3. Validate Output
@@ -78,12 +78,12 @@ To test specific configurations:
 
 1. **Test with different size thresholds**:
    ```bash
-   TREE_SIZE_REPORT_MIN_SIZE=1048576 php artisan tree-size:report
+   TREE_SIZE_REPORT_MIN_SIZE=1048576 php artisan dg:tree-size-mailer
    ```
 
 2. **Test different scan paths**:
    ```bash
-   TREE_SIZE_REPORT_SCAN_PATH=/path/to/test php artisan tree-size:report
+   TREE_SIZE_REPORT_SCAN_PATH=/path/to/test php artisan dg:tree-size-mailer
    ```
 
 3. **Test with excluded directories** - Edit `config/tree-size-mailer.php` temporarily

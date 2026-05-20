@@ -47,6 +47,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tree View Depth
+    |--------------------------------------------------------------------------
+    |
+    | Maximum depth for the hierarchical tree view section specifically.
+    | This allows you to customize the tree view depth independently from
+    | the general max_depth setting. Set to a lower value (e.g., 2 or 3)
+    | for a more concise tree view in the email report.
+    |
+    | Default: 5 levels
+    |
+    */
+
+    'tree_view_depth' => (int) env('TREE_SIZE_REPORT_TREE_VIEW_DEPTH', 5),
+
+    /*
+    |--------------------------------------------------------------------------
     | Minimum File Size
     |--------------------------------------------------------------------------
     |

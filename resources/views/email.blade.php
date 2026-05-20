@@ -40,7 +40,26 @@
     </table>
     <p class="section-note">First-level directories only • Sizes include all subdirectories</p>
 
-    <h2>🌳 Directory Tree (Top Items, {{ $config['max_depth'] }} Depth)</h2>
+    <h2>📊 Root Level Overview + 1 Level - Total: {{ $config['root_level_plus_one_total_human'] }}</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Size</th>
+                <th>Directory</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($rootLevelPlusOne as $row)
+            <tr>
+                <td class="size">{{ $row['size_human'] }}</td>
+                <td>{{ $row['indent'] }}{{ $row['name'] }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+    <p class="section-note">Two-level hierarchy (root + 1 level deep) • Sizes include all subdirectories • Min size: {{ number_format($config['min_overview_size'] / 1024 / 1024, 1) }} MB</p>
+
+    <h2>🌳 Directory Tree (Top Items, {{ $config['tree_view_depth'] }} Depth)</h2>
     <table class="tree-table">
         <thead>
             <tr>
@@ -57,7 +76,7 @@
             @endforeach
         </tbody>
     </table>
-    <p class="section-note">Max depth: {{ $config['max_depth'] }} levels • Min size: {{ number_format($config['min_tree_size'] / 1024 / 1024, 1) }} MB</p>
+    <p class="section-note">Max depth: {{ $config['tree_view_depth'] }} levels • Min size: {{ number_format($config['min_tree_size'] / 1024 / 1024, 1) }} MB</p>
 
     <h2>📂 Detailed Directory Sizes (All Levels) - Total: {{ $config['detailed_total_human'] }}</h2>
     <table>

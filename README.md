@@ -202,7 +202,7 @@ To send reports to multiple email addresses, edit the config file directly:
 Run the report command manually:
 
 ```bash
-php artisan tree-size:report
+php artisan dg:tree-size-mailer
 ```
 
 The command will:
@@ -222,14 +222,14 @@ Add the command to your application's scheduler for automatic reports.
 ```php
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('tree-size:report')->daily();
+Schedule::command('dg:tree-size-mailer')->daily();
 ```
 
 **Option 2: In `bootstrap/app.php`:**
 
 ```php
 ->withSchedule(function (Schedule $schedule) {
-    $schedule->command('tree-size:report')->daily();
+    $schedule->command('dg:tree-size-mailer')->daily();
 })
 ```
 
@@ -238,7 +238,7 @@ Schedule::command('tree-size:report')->daily();
 ```php
 protected function schedule(Schedule $schedule)
 {
-    $schedule->command('tree-size:report')->daily();
+    $schedule->command('dg:tree-size-mailer')->daily();
 }
 ```
 
@@ -246,16 +246,16 @@ protected function schedule(Schedule $schedule)
 
 ```php
 // Daily at 2:00 AM
-Schedule::command('tree-size:report')->dailyAt('02:00');
+Schedule::command('dg:tree-size-mailer')->dailyAt('02:00');
 
 // Weekly on Monday at 6:00 AM
-Schedule::command('tree-size:report')->weeklyOn(1, '06:00');
+Schedule::command('dg:tree-size-mailer')->weeklyOn(1, '06:00');
 
 // Monthly on the 1st at 3:00 AM
-Schedule::command('tree-size:report')->monthlyOn(1, '03:00');
+Schedule::command('dg:tree-size-mailer')->monthlyOn(1, '03:00');
 
 // Every Sunday at midnight
-Schedule::command('tree-size:report')->weekly()->sundays()->at('00:00');
+Schedule::command('dg:tree-size-mailer')->weekly()->sundays()->at('00:00');
 ```
 
 ## Report Sections
@@ -365,7 +365,7 @@ chmod -R 755 /path/to/scan
 For very large directory trees, increase PHP memory:
 
 ```bash
-php -d memory_limit=512M artisan tree-size:report
+php -d memory_limit=512M artisan dg:tree-size-mailer
 ```
 
 ### Timeout Issues
@@ -373,7 +373,7 @@ php -d memory_limit=512M artisan tree-size:report
 For slow file systems, increase max execution time:
 
 ```bash
-php -d max_execution_time=600 artisan tree-size:report
+php -d max_execution_time=600 artisan dg:tree-size-mailer
 ```
 
 ## Security Considerations
