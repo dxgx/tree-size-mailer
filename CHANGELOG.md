@@ -5,14 +5,12 @@ All notable changes to `dxgx/tree-size-mailer` will be documented in this file.
 ## [1.5.0] - 2026-05-20
 
 ### Added
-- New "Root Level Overview + 1 Level" section showing two-level directory hierarchy with indentation
 - `tree_view_depth` configuration option to independently control tree view depth (separate from `max_depth`)
 - Environment variable `TREE_SIZE_REPORT_TREE_VIEW_DEPTH` for tree view depth configuration
 
 ### Changed
 - Tree view depth is now configurable separately via `tree_view_depth` config option
 - Tree view section header now displays the actual configured depth dynamically
-- Email report structure enhanced with more granular overview options
 
 ## [1.4.0] - 2026-05-19
 

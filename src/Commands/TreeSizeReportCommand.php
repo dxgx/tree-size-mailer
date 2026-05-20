@@ -16,7 +16,6 @@ class TreeSizeReportCommand extends Command
     {
         $basePath = config('tree-size-mailer.scan_path', base_path());
         $rootLevel = $this->buildRootLevelView($basePath);
-        $rootLevelPlusOne = $this->buildRootLevelPlusOneView($basePath);
         $rows = $this->buildReport($basePath);
         $treeView = $this->buildTreeView($basePath);
         
@@ -25,13 +24,11 @@ class TreeSizeReportCommand extends Command
 
         // Calculate totals for each section
         $rootLevelTotal = array_sum(array_column($rootLevel, 'size_bytes'));
-        $rootLevelPlusOneTotal = array_sum(array_column($rootLevelPlusOne, 'size_bytes'));
         $detailedTotal = array_sum(array_column($rows, 'size_bytes'));
         $treeTotal = array_sum(array_column($treeView, 'size_bytes'));
 
         $this->info('Tree size report generated:');
         $this->info('  Root Level: ' . count($rootLevel) . ' dirs, ' . $this->formatSize($rootLevelTotal));
-        $this->info('  Root Level +1: ' . count($rootLevelPlusOne) . ' dirs, ' . $this->formatSize($rootLevelPlusOneTotal));
         $this->info('  Detailed: ' . count($rows) . ' dirs, ' . $this->formatSize($detailedTotal));
         
         foreach ($customBreakdowns as $breakdown) {
@@ -56,12 +53,10 @@ class TreeSizeReportCommand extends Command
             'detailed_total_human' => $this->formatSize($detailedTotal),
             'root_level_total' => $rootLevelTotal,
             'root_level_total_human' => $this->formatSize($rootLevelTotal),
-            'root_level_plus_one_total' => $rootLevelPlusOneTotal,
-            'root_level_plus_one_total_human' => $this->formatSize($rootLevelPlusOneTotal),
         ];
 
         foreach ($recipients as $email) {
-            Mail::to($email)->send(new TreeSizeReportMail($rootLevel, $rootLevelPlusOne, $rows, $treeView, $customBreakdowns, $basePath, $config));
+            Mail::to($email)->send(new TreeSizeReportMail($rootLevel, $rows, $treeView, $customBreakdowns, $basePath, $config));
         }
 
         $this->info('Tree size report emailed to: ' . implode(', ', $recipients));
@@ -266,126 +261,6 @@ class TreeSizeReportCommand extends Command
         });
         
         return $rootDirs;
-    }
-
-    /**
-     * Build a view of root level directories plus one additional level (2 levels total).
-     *
-     * @param string $basePath The base path to scan
-     * @return array Array of directories with their sizes in a hierarchical flat structure
-     */
-    private function buildRootLevelPlusOneView(string $basePath): array
-    {
-        $allDirs = [];
-        $minSize = config('tree-size-mailer.min_overview_size', 1048576);
-        
-        try {
-            // Scan root level directories
-            $iterator = new \DirectoryIterator($basePath);
-            
-            foreach ($iterator as $item) {
-                if ($item->isDot() || !$item->isDir()) {
-                    continue;
-                }
-                
-                $dirName = $item->getFilename();
-                $relativePath = './' . $dirName;
-                
-                // Check if directory is excluded
-                if ($this->isExcluded($relativePath)) {
-                    continue;
-                }
-                
-                // Calculate recursive size for root directory
-                $totalSize = $this->calculateRecursiveSize($item->getPathname());
-                
-                if ($totalSize >= $minSize) {
-                    $allDirs[] = [
-                        'name' => $dirName,
-                        'path' => $relativePath,
-                        'size_bytes' => $totalSize,
-                        'size_human' => $this->formatSize($totalSize),
-                        'level' => 0,
-                        'indent' => '',
-                    ];
-                    
-                    // Now scan one level deeper
-                    $subIterator = new \DirectoryIterator($item->getPathname());
-                    
-                    foreach ($subIterator as $subItem) {
-                        if ($subItem->isDot() || !$subItem->isDir()) {
-                            continue;
-                        }
-                        
-                        $subDirName = $subItem->getFilename();
-                        $subRelativePath = $relativePath . '/' . $subDirName;
-                        
-                        // Check if subdirectory is excluded
-                        if ($this->isExcluded($subRelativePath)) {
-                            continue;
-                        }
-                        
-                        // Calculate recursive size for subdirectory
-                        $subTotalSize = $this->calculateRecursiveSize($subItem->getPathname());
-                        
-                        if ($subTotalSize >= $minSize) {
-                            $allDirs[] = [
-                                'name' => $subDirName,
-                                'path' => $subRelativePath,
-                                'size_bytes' => $subTotalSize,
-                                'size_human' => $this->formatSize($subTotalSize),
-                                'level' => 1,
-                                'indent' => '  ',
-                            ];
-                        }
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            $this->warn('Error building root level +1 view: ' . $e->getMessage());
-        }
-        
-        // Sort by size (largest first) while preserving hierarchy visually
-        // Root items sorted, and their children sorted within each parent
-        $sortedDirs = [];
-        $currentParent = null;
-        $parentIndex = -1;
-        
-        foreach ($allDirs as $dir) {
-            if ($dir['level'] === 0) {
-                $sortedDirs[] = [
-                    'parent' => $dir,
-                    'children' => [],
-                ];
-                $parentIndex++;
-                $currentParent = $dir['path'];
-            } elseif ($dir['level'] === 1 && $parentIndex >= 0) {
-                $sortedDirs[$parentIndex]['children'][] = $dir;
-            }
-        }
-        
-        // Sort parents by size
-        usort($sortedDirs, function($a, $b) {
-            return $b['parent']['size_bytes'] <=> $a['parent']['size_bytes'];
-        });
-        
-        // Sort children within each parent
-        foreach ($sortedDirs as &$item) {
-            usort($item['children'], function($a, $b) {
-                return $b['size_bytes'] <=> $a['size_bytes'];
-            });
-        }
-        
-        // Flatten back to single array
-        $finalDirs = [];
-        foreach ($sortedDirs as $item) {
-            $finalDirs[] = $item['parent'];
-            foreach ($item['children'] as $child) {
-                $finalDirs[] = $child;
-            }
-        }
-        
-        return $finalDirs;
     }
 
     private function dirSize(string $path): int

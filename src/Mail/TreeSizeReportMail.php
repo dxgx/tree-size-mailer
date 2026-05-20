@@ -14,8 +14,6 @@ class TreeSizeReportMail extends Mailable
 
     public array $rootLevel;
 
-    public array $rootLevelPlusOne;
-
     public array $rows;
 
     public array $treeView;
@@ -28,10 +26,9 @@ class TreeSizeReportMail extends Mailable
 
     public string $generatedAt;
 
-    public function __construct(array $rootLevel, array $rootLevelPlusOne, array $rows, array $treeView, array $customBreakdowns, string $basePath, array $config)
+    public function __construct(array $rootLevel, array $rows, array $treeView, array $customBreakdowns, string $basePath, array $config)
     {
         $this->rootLevel = $rootLevel;
-        $this->rootLevelPlusOne = $rootLevelPlusOne;
         $this->rows = $rows;
         $this->treeView = $treeView;
         $this->customBreakdowns = $customBreakdowns;
