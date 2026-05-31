@@ -38,5 +38,16 @@
     "prefer-stable": true,
     "require-dev": {
         "laravel/pint": "^1.29"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "# Calculate size and remove unnecessary directories from vendor packages to save disk space",
+            "find vendor \\( -name '.git' -o -name 'tests' -o -name 'test' -o -name 'demo' -o -name 'examples' -o -name '.github' \\) -type d -exec du -sk {} + 2>/dev/null | awk '{sum+=$1}END{if(sum>0)printf \"Removing %d KB of unnecessary files\\n\",sum}'; find vendor \\( -name '.git' -o -name 'tests' -o -name 'test' -o -name 'demo' -o -name 'examples' -o -name '.github' \\) -type d -prune -exec rm -rf {} + 2>/dev/null; find vendor -name '.DS_Store' -delete 2>/dev/null"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
+            "# Calculate size and remove unnecessary directories from vendor packages to save disk space",
+            "find vendor \\( -name '.git' -o -name 'tests' -o -name 'test' -o -name 'demo' -o -name 'examples' -o -name '.github' \\) -type d -exec du -sk {} + 2>/dev/null | awk '{sum+=$1}END{if(sum>0)printf \"Removing %d KB of unnecessary files\\n\",sum}'; find vendor \\( -name '.git' -o -name 'tests' -o -name 'test' -o -name 'demo' -o -name 'examples' -o -name '.github' \\) -type d -prune -exec rm -rf {} + 2>/dev/null; find vendor -name '.DS_Store' -delete 2>/dev/null"
+        ]
     }
 }
