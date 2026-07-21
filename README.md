@@ -443,6 +443,15 @@ MIT License. See LICENSE file for details.
 For issues, questions, or contributions, please contact:
 - Email: dargud@gmail.com
 
+## Used In
+
+This package is actively used in production by the following projects:
+
+- [DeadSimpleApps.com](https://deadsimpleapps.com)
+- [TvFilmAI.lt](https://tvfilmai.lt)
+- [FlyFiles.io](https://flyfiles.io)
+- [AdvertGates.eu](https://advertgates.eu)
+
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
