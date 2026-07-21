@@ -447,10 +447,10 @@ For issues, questions, or contributions, please contact:
 
 This package is actively used in production by the following projects:
 
-- [DeadSimpleApps.com](https://deadsimpleapps.com)
-- [TvFilmAI.lt](https://tvfilmai.lt)
-- [FlyFiles.io](https://flyfiles.io)
-- [AdvertGates.eu](https://advertgates.eu)
+- [DeadSimpleApps.com - well dead simple apps for smart people](https://deadsimpleapps.com)
+- [tvfilmai.lt - tv filmų programa ir gidas](https://tvfilmai.lt)
+- [FlyFiles.io - share files with pin](https://flyfiles.io)
+- [AdvertGates.eu - car seller management and export system](https://advertgates.eu)
 
 ## Changelog
 
